@@ -1,0 +1,4 @@
+#Object, Backup, and Compiled Binary
+*.o
+*.bak
+SOC_PacMan
