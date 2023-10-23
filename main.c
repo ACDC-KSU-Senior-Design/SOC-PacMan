@@ -84,7 +84,7 @@ int main(int argc,char ** argv) {
 	int file;
 	const char *filename = "/dev/i2c-0";
 	const int mg_per_digi = 4;
-	uint8_t id;t
+	uint8_t id;
 	uint16_t szXYZ[3];
 	int cnt=0, max_cnt=0;
 		
