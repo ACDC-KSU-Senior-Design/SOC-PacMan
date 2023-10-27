@@ -17,6 +17,7 @@
 #include "hwlib.h"
 #include "ADXL345.h"
 #include "VGA.h"
+#include "PacMan.h"
 
 #define HW_REGS_BASE ( 0xFC000000 )
 #define HW_OCRAM_BASE ( 0xC8000000 )
@@ -113,6 +114,8 @@ int main(int argc,char ** argv) {
     }   
 	
 	VGA_clear(virtual_base);
+
+	InitGameBoard(LIGHT_BLUE, virtual_base);
 
 	Circle currCircle = {240,240,25};
 	Circle prevCircle = currCircle;
