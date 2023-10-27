@@ -19,8 +19,8 @@ void VGA_box(int x1, int y1, int x2, int y2, short pixel_color, void *virtual_ba
 	uint32_t row, col;
 
 	/* assume that the box coordinates are valid */
-	for (row = y1; row <= y2; row++)
-		for (col = x1; col <= x2; ++col)
+	for (row = x1; row <= x2; row++)
+		for (col = y1; col <= y2; ++col)
 			VGA_setPixel(col, row, pixel_color, virtual_base);	
 }
 
@@ -59,7 +59,7 @@ void VGA_text_clear(void *virtual_base){
 }
 
 void VGA_box_clear(void *virtual_base){
-	VGA_box(0,0,480,640, 0x0000, virtual_base);
+	VGA_box(0,0,640,480, 0x0000, virtual_base);
 }
 
 void VGA_clear(void *virtual_base){
@@ -67,11 +67,26 @@ void VGA_clear(void *virtual_base){
 	VGA_text_clear(virtual_base);
 }
 
+void VGA_draw_buffer(uint16_t** pixel_buff, void *virtual_base){
+	int i, j;
+	for(i = 0; i < SCREEN_WIDTH; i++)
+		for(j = 0; j < SCREEN_HEIGHT; j++)
+			VGA_setPixel(i, j, pixel_buff[i][j], virtual_base);
+}
+
+void VGA_draw_buffer_NoColor(uint16_t **pixel_buff, short color, void *virtual_base){
+	int x, y;
+	for(x = 0; x < SCREEN_WIDTH; x++)
+		for(y = 0; y < SCREEN_HEIGHT; y++)
+			if(pixel_buff[x][y] != color)
+				VGA_setPixel(x, y, pixel_buff[x][y], virtual_base);
+}
+
 void VGA_line(int x1, int y1, int x2, int y2, short pixel_color, void *virtual_base){
 	uint32_t row, col, xmax, xmin, ymax, ymin;
 	
 	if(x1 == x2 || y1 == y2){
-		VGA_box(y1, x1, y2, x2, pixel_color, virtual_base);
+		VGA_box(x1, y1, x2, y2, pixel_color, virtual_base);
 		return;
 	}
 	
