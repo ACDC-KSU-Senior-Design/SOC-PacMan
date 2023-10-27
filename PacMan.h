@@ -3,6 +3,6 @@
 
 #include "VGA.h"
 
-void InitGameBoard(short pixel_color, void *virtual_base);
+void InitGameBoard(uint16_t pixel_color, void *virtual_base);
 
 #endif
