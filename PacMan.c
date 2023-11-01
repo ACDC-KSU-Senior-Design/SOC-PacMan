@@ -5,6 +5,8 @@
 #define MIN(a,b) (a > b ? b : a)
 
 static uint16_t **GameBoard;
+static uint16_t **PacMan;
+static uint16_t **Combined;
 
 static uint16_t** CreateArray(int xSize, int ySize);
 static void PlaceBox(uint16_t ***array, int x1, int y1, int x2, int y2, short color);
@@ -13,7 +15,10 @@ static void PlacePixel(uint16_t ***array, int x, int y, short color);
 void InitGameBoard(uint16_t pixel_color, void *virtual_base){
 
     GameBoard = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
+	PacMan = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
+	Combined = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
 	
+	#pragma region InitGameboard
 	PlaceBox(&GameBoard, 105,   3, 535,  24, pixel_color);
 	PlaceBox(&GameBoard, 105,  25, 126, 161, pixel_color);
 	PlaceBox(&GameBoard, 127, 140, 194, 161, pixel_color);
@@ -77,11 +82,16 @@ void InitGameBoard(uint16_t pixel_color, void *virtual_base){
 	PlaceBox(&GameBoard, 219,321,285,342, pixel_color);
 	PlaceBox(&GameBoard, 219,231,240,297, pixel_color);
 	PlaceBox(&GameBoard, 400,230,421,297, pixel_color);
-
+	#pragma endregion
+	
+	#pragma region InitPacMan
+	PlaceBox(&PacMan, 200,200,300,300, DARK_PINK);
+	#pragma endregion
 	//Dark Blue 0xce43
 	//PlaceBox(&GameBoard, 200,200,400,400, 0x2000);
 
 	VGA_draw_buffer_NoColor(GameBoard, BLACK, virtual_base);
+	VGA_draw_buffer_NoColor(PacMan   , BLACK, virtual_base);
 	//VGA_draw_buffer(&GameBoard, virtual_base);
 }
 
