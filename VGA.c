@@ -68,10 +68,10 @@ void VGA_clear(void *virtual_base){
 }
 
 void VGA_draw_buffer(uint16_t** pixel_buff, void *virtual_base){
-	int i, j;
-	for(i = 0; i < SCREEN_WIDTH; i++)
-		for(j = 0; j < SCREEN_HEIGHT; j++)
-			VGA_setPixel(i, j, pixel_buff[i][j], virtual_base);
+	int x, y;
+	for(x = 0; x < SCREEN_WIDTH; x++)
+		for(y = 0; y < SCREEN_HEIGHT; y++)
+			VGA_setPixel(y, x, pixel_buff[x][y], virtual_base);	
 }
 
 void VGA_draw_buffer_NoColor(uint16_t **pixel_buff, short color, void *virtual_base){
@@ -79,7 +79,7 @@ void VGA_draw_buffer_NoColor(uint16_t **pixel_buff, short color, void *virtual_b
 	for(x = 0; x < SCREEN_WIDTH; x++)
 		for(y = 0; y < SCREEN_HEIGHT; y++)
 			if(pixel_buff[x][y] != color)
-				VGA_setPixel(x, y, pixel_buff[x][y], virtual_base);
+				VGA_setPixel(y, x, pixel_buff[x][y], virtual_base);
 }
 
 void VGA_line(int x1, int y1, int x2, int y2, short pixel_color, void *virtual_base){
