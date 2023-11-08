@@ -13,11 +13,17 @@ typedef struct{
 
 // https://www.pixilart.com/draw/mine-is-the-coordinates-4e1b3d00ba4c277
 
+
 static uint16_t **GameBoard;
 static uint16_t **PacMan;
 static uint16_t **Combined;
+
+// Pacman Variables
 static Direction NewDirection;
 static Direction PrevDirection;
+// 0=closed, 1=almost_closed, half_open, fully_open, half_open, almost_closed
+static int AnimationPhase = 0;
+
 
 static uint16_t** CreateArray(int xSize, int ySize);
 static void PlaceBox(uint16_t ***array, int x1, int y1, int x2, int y2, short color);
@@ -186,23 +192,59 @@ static void Move_Pacman(uint16_t ***pacMan, int xCenter, int yCenter, Direction 
 	}
 }
 
-static void ClearPacman(uint16_t ***pacMan)
+static void ResetPacmanBuffer(uint16_t ***pacMan)
 {
-	// Top Left Corner too black
-	PlaceBox(pacMan, 0, 0, 6, 0, BLACK);
-	PlaceBox(pacMan, 0, 1, 4, 1, BLACK);
-	PlaceBox(pacMan, 0, 2, 2, 2, BLACK);
-	PlaceBox(pacMan, 0, 3, 1, 3, BLACK);
-	PlaceBox(pacMan, 0, 4, 1, 4, BLACK);
-	PlaceBox(pacMan, 0, 5, 0, 5, BLACK);
-	PlaceBox(pacMan, 0, 6, 0, 6, BLACK);
-
-	PlaceBox(pacMan, 12, 0, 18, 0, BLACK);
-	
+	//Middle too yellow
+	PlaceBox(pacMan, 7, 0, 11, 18, PackMan_Color);
+	//Left half too yellow
+	PlaceBox(pacMan, 5, 1, 6, 17, PackMan_Color);
+	PlaceBox(pacMan, 3, 2, 4, 16, PackMan_Color);
+	PlaceBox(pacMan, 2, 3, 2, 15, PackMan_Color);
+	PlaceBox(pacMan, 1, 5, 1, 13, PackMan_Color);
+	PlaceBox(pacMan, 0, 7, 0, 11, PackMan_Color);
+	//Right half too yellow
+	PlaceBox(pacMan, 12, 1, 13, 17, PackMan_Color);
+	PlaceBox(pacMan, 14, 2, 15, 16, PackMan_Color);
+	PlaceBox(pacMan, 16, 3, 16, 15, PackMan_Color);
+	PlaceBox(pacMan, 17, 5, 17, 13, PackMan_Color);
+	PlaceBox(pacMan, 18, 7, 18, 11, PackMan_Color);	
 }	
-static void Move_PacmanUp(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base)
+static void PacManBufferTooUp(uint16_t ***pacMan, int CurrPhase)
 {
-	ClearPacman(pacMan); 
+	switch(CurrPhase)
+	{
+		case 0:		// Closed			
+			break;
+
+		case 1:		// Almost Closed
+
+			break;
+
+		case 4:	
+		case 2:		// Half Open
+			break;
+
+		case 3:		// Fully Open
+			PlaceBox(pacMan, 7, 0, 11, 6, PackMan_Color);
+			PlaceBox(pacMan, 5, 1, 6, 4, PackMan_Color);
+			PlaceBox(pacMan, 4, 3, 4, 3, PackMan_Color);
+			PlaceBox(pacMan, 3, 2, 3, 2, PackMan_Color);
+			PlaceBox(pacMan, 6, 5, 6, 5, PackMan_Color);
+			PlaceBox(pacMan, 8, 7, 10, 7, PackMan_Color);
+			PlaceBox(pacMan, 9, 8, 9, 8, PackMan_Color);
+			PlaceBox(pacMan, 12, 1, 13, 4, PackMan_Color);
+			PlaceBox(pacMan, 14, 2, 14, 3, PackMan_Color);
+			PlaceBox(pacMan, 15, 2, 15, 2, PackMan_Color);
+			PlaceBox(pacMan, 12, 5, 12, 5, PackMan_Color);
+			break;
+
+			// Half Open
+			break;
+
+		case 5:		// Almost Closed
+			break;		
+	}
+
 }
 static void Move_PacmanDown(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base){}
 static void Move_PacmanLeft(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base){}
