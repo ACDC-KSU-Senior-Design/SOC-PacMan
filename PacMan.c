@@ -342,6 +342,7 @@ void InitGameBoard(void *virtual_base){
 
 	//Dark Blue 0xce43
 	VGA_draw_buffer(Combined, virtual_base);
+
 }
 
 static void InitializePacMan(uint16_t ***pacMan)
