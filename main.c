@@ -115,7 +115,7 @@ int main(int argc,char ** argv) {
 	
 	VGA_clear(virtual_base);
 
-	InitGameBoard(LIGHT_BLUE, virtual_base);
+	InitGameBoard(virtual_base);
 
 	Circle currCircle = {240,240,25};
 	Circle prevCircle = currCircle;

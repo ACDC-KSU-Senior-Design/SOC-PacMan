@@ -3,6 +3,7 @@
 
 #include "VGA.h"
 
+ 
 typedef enum
 {
     UP,
@@ -12,6 +13,11 @@ typedef enum
 }Direction;
 
 void InitGameBoard(uint16_t pixel_color, void *virtual_base);
+
+
+void InitGameBoard(void *virtual_base);
+void FreeGameBoard();
+ 
 
 
 #endif
