@@ -402,6 +402,7 @@ void InitGameBoard(void *virtual_base){
  
 	//Dark Blue 0xce43
 	VGA_draw_buffer(Combined, virtual_base);
+
 }
 
 static void InitializePacMan(uint16_t ***pacMan)
@@ -649,10 +650,6 @@ static void PacManBufferTooRight(uint16_t ***pacMan, int CurrPhase)
 			break;		
 	}		
 
-	VGA_draw_buffer_NoColor(GameBoard, BLACK, virtual_base);
-	//VGA_draw_buffer_NoColor(PacMan   , BLACK, virtual_base);
-	VGA_draw_buffer_NoColor(GameLines, BLACK, virtual_base);
-	//VGA_draw_buffer(&GameBoard, virtual_base);
  
 }
 
