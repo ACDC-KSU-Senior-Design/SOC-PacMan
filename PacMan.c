@@ -34,11 +34,11 @@ static void PlaceBigDot(uint16_t ***array, uint16_t x, uint16_t y);
 
 static void InitializePacMan(uint16_t ***pacMan);
 static void Move_Pacman(uint16_t ***pacMan, int xCenter, int yCenter, Direction NewDirection, Direction PrevDirection, void *virtual_base);
-static void Move_PacmanUp(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base);
-static void Move_PacmanDown(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base);
-static void Move_PacmanLeft(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base);
-static void Move_PacmanRight(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base);
-static void ClearPacman(uint16_t ***pacMan);
+static void PacManBufferTooUp(uint16_t ***pacMan, int CurrPhase);
+static void PacManBufferTooLeft(uint16_t ***pacMan, int CurrPhase);
+static void PacManBufferTooRight(uint16_t ***pacMan, int CurrPhase);
+static void PacManBufferTooDown(uint16_t ***pacMan, int CurrPhase);
+static void ResetPacmanBuffer(uint16_t ***pacMan);
 
 
 void InitGameBoard(uint16_t pixel_color, void *virtual_base){
@@ -298,7 +298,45 @@ void InitGameBoard(uint16_t pixel_color, void *virtual_base){
 
 	Coordinates old = {300,300};
 	Coordinates new = {321,264};	//Starting Coordinates
+
+	int i;
+	while(1)
+	{
+		for (i = 0; i <= 5; i++)
+		{
+			ResetPacmanBuffer(&PacMan);
+			PacManBufferTooRight(&PacMan, i);
+			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
+			VGA_draw_buffer(Combined, virtual_base);		
+		}
+		for (i = 0; i <= 5; i++)
+		{
+			ResetPacmanBuffer(&PacMan);
+			PacManBufferTooLeft(&PacMan, i);
+			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
+			VGA_draw_buffer(Combined, virtual_base);			
+		}
+		for (i = 0; i <= 5; i++)
+		{
+			ResetPacmanBuffer(&PacMan);
+			PacManBufferTooUp(&PacMan, i);
+			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
+			VGA_draw_buffer(Combined, virtual_base);			
+		}
+		for (i = 0; i <= 5; i++)
+		{
+			ResetPacmanBuffer(&PacMan);
+			PacManBufferTooDown(&PacMan, i);
+			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
+			VGA_draw_buffer(Combined, virtual_base);			
+		}
+
+	}
+
+
+	PacManBufferTooRight(&PacMan, 1);
 	PlacePacMan(&Combined, GameBoard, PacMan, old, new);
+
 
 	//Dark Blue 0xce43
 	VGA_draw_buffer(Combined, virtual_base);
@@ -387,44 +425,167 @@ static void ResetPacmanBuffer(uint16_t ***pacMan)
 }	
 static void PacManBufferTooUp(uint16_t ***pacMan, int CurrPhase)
 {
+	//ResetPacmanBuffer(pacMan);
 	switch(CurrPhase)
 	{
 		case 0:		// Closed			
 			break;
 
 		case 1:		// Almost Closed
-
+		case 5:
+			PlaceBox(pacMan, 7, 0, 11, 2, BLACK);
+			PlaceBox(pacMan, 8, 3, 10, 7, BLACK);
+			PlaceBox(pacMan, 9, 9, 9, 8, BLACK);		
 			break;
-
-		case 4:	
+	
 		case 2:		// Half Open
+		case 4:
+			PlaceBox(pacMan, 7, 0, 11, 6, BLACK);
+			PlaceBox(pacMan, 5, 1, 6, 2, BLACK);
+			PlaceBox(pacMan, 6, 3, 6, 3, BLACK);
+			PlaceBox(pacMan, 12, 1, 13, 2, BLACK);
+			PlaceBox(pacMan, 12, 3, 12, 3, BLACK);
+			PlaceBox(pacMan, 8, 7, 10, 7, BLACK);
+			PlaceBox(pacMan, 9, 8, 9, 9, BLACK);
 			break;
 
 		case 3:		// Fully Open
-			PlaceBox(pacMan, 7, 0, 11, 6, PackMan_Color);
-			PlaceBox(pacMan, 5, 1, 6, 4, PackMan_Color);
-			PlaceBox(pacMan, 4, 3, 4, 3, PackMan_Color);
-			PlaceBox(pacMan, 3, 2, 3, 2, PackMan_Color);
-			PlaceBox(pacMan, 6, 5, 6, 5, PackMan_Color);
-			PlaceBox(pacMan, 8, 7, 10, 7, PackMan_Color);
-			PlaceBox(pacMan, 9, 8, 9, 8, PackMan_Color);
-			PlaceBox(pacMan, 12, 1, 13, 4, PackMan_Color);
-			PlaceBox(pacMan, 14, 2, 14, 3, PackMan_Color);
-			PlaceBox(pacMan, 15, 2, 15, 2, PackMan_Color);
-			PlaceBox(pacMan, 12, 5, 12, 5, PackMan_Color);
-			break;
-
-			// Half Open
-			break;
-
-		case 5:		// Almost Closed
+			PlaceBox(pacMan, 7, 0, 11, 7, BLACK);
+			PlaceBox(pacMan, 5, 1, 6, 5, BLACK);
+			PlaceBox(pacMan, 3, 2, 4, 3, BLACK);
+			PlaceBox(pacMan, 4, 4, 4, 4, BLACK);
+			PlaceBox(pacMan, 6, 6, 6, 6, BLACK);
+			PlaceBox(pacMan, 8, 8, 10, 8, BLACK);
+			PlaceBox(pacMan, 9, 9, 9, 9, BLACK);
+			PlaceBox(pacMan, 12, 1, 13, 5, BLACK);
+			PlaceBox(pacMan, 14, 2, 15, 3, BLACK);
+			PlaceBox(pacMan, 12, 6, 12, 6, BLACK);
+			PlaceBox(pacMan, 14, 4, 14, 4, BLACK);
 			break;		
 	}
 
 }
-static void Move_PacmanDown(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base){}
-static void Move_PacmanLeft(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base){}
-static void Move_PacmanRight(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base){}
+static void PacManBufferTooDown(uint16_t ***pacMan, int CurrPhase)
+{
+	switch(CurrPhase)
+	{
+		case 0:		// Closed			
+			break;
+
+		case 1:		// Almost Closed
+		case 5:
+			PlaceBox(pacMan, 7, 16, 11, 18, BLACK);
+			PlaceBox(pacMan, 8, 11, 10, 15, BLACK);
+			PlaceBox(pacMan, 9, 9, 9, 10, BLACK);		
+			break;
+	
+		case 2:		// Half Open
+		case 4:
+			PlaceBox(pacMan, 7, 12, 11, 18, BLACK);
+			PlaceBox(pacMan, 5, 16, 6, 17, BLACK);
+			PlaceBox(pacMan, 6, 15, 6, 15, BLACK);
+			PlaceBox(pacMan, 12, 16, 13, 17, BLACK);
+			PlaceBox(pacMan, 12, 15, 12, 15, BLACK);
+			PlaceBox(pacMan, 8, 11, 10, 11, BLACK);
+			PlaceBox(pacMan, 9, 9, 9, 10, BLACK);
+			PlaceBox(pacMan, 5, 16, 13, 18, BLACK); // debug 
+			break;
+
+		case 3:		// Fully Open
+			PlaceBox(pacMan, 7, 11, 11, 18, BLACK);
+			PlaceBox(pacMan, 8, 10, 10, 10, BLACK);
+			PlaceBox(pacMan, 9, 9, 9, 9, BLACK);
+			PlaceBox(pacMan, 5, 13, 6, 17, BLACK);
+			PlaceBox(pacMan, 3, 15, 4, 16, BLACK);
+			PlaceBox(pacMan, 4, 14, 4, 14, BLACK);
+			PlaceBox(pacMan, 6, 12, 6, 12, BLACK);
+			PlaceBox(pacMan, 12, 12, 12, 12, BLACK);
+			PlaceBox(pacMan, 14, 14, 14, 14, BLACK);
+			PlaceBox(pacMan, 12, 13, 13, 17, BLACK);
+			PlaceBox(pacMan, 14, 15, 15, 16, BLACK);
+			break;		
+	}
+}
+static void PacManBufferTooLeft(uint16_t ***pacMan, int CurrPhase)
+{
+	switch(CurrPhase)
+	{
+		case 0:		// Closed			
+			break;
+
+		case 1:		// Almost Closed
+		case 5:
+			PlaceBox(pacMan, 0, 7, 2, 11, BLACK);
+			PlaceBox(pacMan, 3, 8, 7, 10, BLACK);
+			PlaceBox(pacMan, 8, 9, 9, 9, BLACK);		
+			break;
+	
+		case 2:		// Half Open
+		case 4:
+			PlaceBox(pacMan, 0, 7, 6, 11, BLACK);
+			PlaceBox(pacMan, 7, 8, 7, 10, BLACK);
+			PlaceBox(pacMan, 8, 9, 9, 9, BLACK);
+			PlaceBox(pacMan, 1, 12, 2, 13, BLACK);
+			PlaceBox(pacMan, 3, 12, 3, 12, BLACK);
+			PlaceBox(pacMan, 1, 5, 2, 6, BLACK);
+			PlaceBox(pacMan, 3, 6, 3, 6, BLACK);
+			break;
+
+		case 3:		// Fully Open
+			PlaceBox(pacMan, 0, 7, 7, 11, BLACK);
+			PlaceBox(pacMan, 1, 12, 5, 13, BLACK);
+			PlaceBox(pacMan, 1, 5, 5, 6, BLACK);
+			PlaceBox(pacMan, 2, 3, 3, 4, BLACK);
+			PlaceBox(pacMan, 2, 14, 3, 15, BLACK);
+			PlaceBox(pacMan, 4, 14, 4, 14, BLACK);
+			PlaceBox(pacMan, 6, 12, 6, 12, BLACK);
+			PlaceBox(pacMan, 4, 4, 4, 4, BLACK);
+			PlaceBox(pacMan, 6, 6, 6, 6, BLACK);
+			PlaceBox(pacMan, 8, 8, 8, 10, BLACK);
+			PlaceBox(pacMan, 9, 9, 9, 9, BLACK);
+			break;		
+	}	
+}
+static void PacManBufferTooRight(uint16_t ***pacMan, int CurrPhase)
+{
+	switch(CurrPhase)
+	{
+		case 0:		// Closed			
+			break;
+
+		case 1:		// Almost Closed
+		case 5:
+			PlaceBox(pacMan, 16, 7, 18, 11, BLACK);
+			PlaceBox(pacMan, 11, 8, 15, 10, BLACK);
+			PlaceBox(pacMan, 9, 9, 10, 9, BLACK);		
+			break;
+	
+		case 2:		// Half Open
+		case 4:
+			PlaceBox(pacMan, 12, 7, 18, 11, BLACK);
+			PlaceBox(pacMan, 16, 12, 17, 13, BLACK);
+			PlaceBox(pacMan, 16, 5, 17, 6, BLACK);
+			PlaceBox(pacMan, 15, 6, 15, 6, BLACK);
+			PlaceBox(pacMan, 15, 12, 15, 12, BLACK);
+			PlaceBox(pacMan, 9, 9, 10, 9, BLACK);
+			PlaceBox(pacMan, 11, 8, 11, 10, BLACK);
+			break;
+
+		case 3:		// Fully Open
+			PlaceBox(pacMan, 11, 7, 18, 11, BLACK);
+			PlaceBox(pacMan, 13, 12, 17, 13, BLACK);
+			PlaceBox(pacMan, 15, 14, 16, 15, BLACK);
+			PlaceBox(pacMan, 12, 12, 12, 12, BLACK);
+			PlaceBox(pacMan, 14, 14, 14, 14, BLACK);
+			PlaceBox(pacMan, 13, 5, 17, 6, BLACK);
+			PlaceBox(pacMan, 15, 3, 16, 4, BLACK);
+			PlaceBox(pacMan, 14, 4, 14, 4, BLACK);
+			PlaceBox(pacMan, 12, 6, 12, 6, BLACK);
+			PlaceBox(pacMan, 10, 8, 10, 10, BLACK);
+			PlaceBox(pacMan, 9, 9, 9, 9, BLACK);
+			break;		
+	}		
+}
 
 static uint16_t** CreateArray(int xSize, int ySize){
 	uint16_t **temp = malloc(sizeof(uint16_t*) * xSize);
