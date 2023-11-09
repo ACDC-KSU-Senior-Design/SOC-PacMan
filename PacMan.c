@@ -29,6 +29,8 @@ static uint16_t** CreateArray(int xSize, int ySize);
 static void PlaceBox(uint16_t ***array, int x1, int y1, int x2, int y2, short color);
 static void PlacePixel(uint16_t ***array, int x, int y, short color);
 static void PlacePacMan(uint16_t ***array, uint16_t **gameboard, uint16_t ** pacman, Coordinates old, Coordinates new);
+static void PlaceSmallDot(uint16_t ***array, uint16_t x, uint16_t y);
+static void PlaceBigDot(uint16_t ***array, uint16_t x, uint16_t y);
 
 static void InitializePacMan(uint16_t ***pacMan);
 static void Move_Pacman(uint16_t ***pacMan, int xCenter, int yCenter, Direction NewDirection, Direction PrevDirection, void *virtual_base);
@@ -109,16 +111,190 @@ void InitGameBoard(uint16_t pixel_color, void *virtual_base){
 	PlaceBox(&GameBoard, 219,321,285,342, pixel_color);
 	PlaceBox(&GameBoard, 219,231,240,297, pixel_color);
 	PlaceBox(&GameBoard, 400,230,421,297, pixel_color);
+
+	int x, y;
+	for(x = 0; x < SCREEN_WIDTH; x++)
+		for(y = 0; y < SCREEN_HEIGHT; y++)
+			PlacePixel(&Combined, x,y,GameBoard[x][y]);	//Copies the Gameboard into Combined
 	#pragma endregion
 
 	#pragma region InitPacMan
 		InitializePacMan(&PacMan);
 	#pragma endregion
 
-	int x, y;
-	for(x = 0; x < SCREEN_WIDTH; x++)
-		for(y = 0; y < SCREEN_HEIGHT; y++)
-			PlacePixel(&Combined, x,y,GameBoard[x][y]);	//Copies the Gameboard into Combined
+	#pragma region InitDots
+	PlaceSmallDot(&Combined, 139, 445);
+	PlaceSmallDot(&Combined, 161, 445);
+	PlaceSmallDot(&Combined, 184, 445);
+	PlaceSmallDot(&Combined, 207, 445);
+	PlaceSmallDot(&Combined, 230, 445);
+	PlaceSmallDot(&Combined, 252, 445);
+	PlaceSmallDot(&Combined, 275, 445);
+	PlaceSmallDot(&Combined, 298, 445);
+	PlaceSmallDot(&Combined, 320, 445);
+	PlaceSmallDot(&Combined, 343, 445);
+	PlaceSmallDot(&Combined, 366, 445);
+	PlaceSmallDot(&Combined, 389, 445);
+	PlaceSmallDot(&Combined, 411, 445);
+	PlaceSmallDot(&Combined, 434, 445);
+	PlaceSmallDot(&Combined, 457, 445);
+	PlaceSmallDot(&Combined, 479, 445);
+	PlaceSmallDot(&Combined, 502, 445); //Bottom Row
+
+	PlaceSmallDot(&Combined, 139, 36);
+	PlaceSmallDot(&Combined, 161, 36);
+	PlaceSmallDot(&Combined, 184, 36);
+	PlaceSmallDot(&Combined, 207, 36);
+	PlaceSmallDot(&Combined, 230, 36);
+	PlaceSmallDot(&Combined, 252, 36);
+	PlaceSmallDot(&Combined, 275, 36);
+	PlaceSmallDot(&Combined, 298, 36);
+	PlaceSmallDot(&Combined, 343, 36);
+	PlaceSmallDot(&Combined, 366, 36);
+	PlaceSmallDot(&Combined, 389, 36);
+	PlaceSmallDot(&Combined, 411, 36);
+	PlaceSmallDot(&Combined, 434, 36);
+	PlaceSmallDot(&Combined, 457, 36);
+	PlaceSmallDot(&Combined, 479, 36);
+	PlaceSmallDot(&Combined, 502, 36); //Top Row
+
+	PlaceSmallDot(&Combined, 139, 82);
+	PlaceSmallDot(&Combined, 161, 82);
+	PlaceSmallDot(&Combined, 184, 82);
+	PlaceSmallDot(&Combined, 207, 82);
+	PlaceSmallDot(&Combined, 230, 82);
+	PlaceSmallDot(&Combined, 252, 82);
+	PlaceSmallDot(&Combined, 275, 82);
+	PlaceSmallDot(&Combined, 298, 82);
+	PlaceSmallDot(&Combined, 320, 82);
+	PlaceSmallDot(&Combined, 343, 82);
+	PlaceSmallDot(&Combined, 366, 82);
+	PlaceSmallDot(&Combined, 389, 82);
+	PlaceSmallDot(&Combined, 411, 82);
+	PlaceSmallDot(&Combined, 434, 82);
+	PlaceSmallDot(&Combined, 457, 82);
+	PlaceSmallDot(&Combined, 479, 82);
+	PlaceSmallDot(&Combined, 502, 82); //Second Top Row
+
+	PlaceSmallDot(&Combined, 139, 309);
+	PlaceSmallDot(&Combined, 161, 309);
+	PlaceSmallDot(&Combined, 184, 309);
+	PlaceSmallDot(&Combined, 207, 309);
+	PlaceSmallDot(&Combined, 230, 309);
+	PlaceSmallDot(&Combined, 252, 309);
+	PlaceSmallDot(&Combined, 275, 309);
+	PlaceSmallDot(&Combined, 298, 309);	//Causing Small Box Issue...??
+	PlaceSmallDot(&Combined, 298, 309);	//Causing Small Box Issue...??
+	PlaceSmallDot(&Combined, 343, 309);
+	PlaceSmallDot(&Combined, 366, 309);
+	PlaceSmallDot(&Combined, 389, 309);
+	PlaceSmallDot(&Combined, 411, 309);
+	PlaceSmallDot(&Combined, 434, 309);
+	PlaceSmallDot(&Combined, 457, 309);
+	PlaceSmallDot(&Combined, 479, 309);
+	PlaceSmallDot(&Combined, 502, 309); //4th Row from bottom
+
+	PlaceBigDot(  &Combined, 139, 354);	//BIG DOT
+	PlaceSmallDot(&Combined, 161, 354);
+	PlaceSmallDot(&Combined, 207, 354);
+	PlaceSmallDot(&Combined, 230, 354);
+	PlaceSmallDot(&Combined, 252, 354);
+	PlaceSmallDot(&Combined, 275, 354);
+	PlaceSmallDot(&Combined, 298, 354);
+	PlaceSmallDot(&Combined, 320, 354);
+	PlaceSmallDot(&Combined, 343, 354);
+	PlaceSmallDot(&Combined, 366, 354);
+	PlaceSmallDot(&Combined, 389, 354);
+	PlaceSmallDot(&Combined, 411, 354);
+	PlaceSmallDot(&Combined, 434, 354);
+	PlaceSmallDot(&Combined, 479, 354);	//3rd row from bottom
+	PlaceBigDot(  &Combined, 502, 354); //BIG DOT
+
+	PlaceSmallDot(&Combined, 139, 400);
+	PlaceSmallDot(&Combined, 161, 400);
+	PlaceSmallDot(&Combined, 184, 400);
+	PlaceSmallDot(&Combined, 207, 400);
+	PlaceSmallDot(&Combined, 252, 400);
+	PlaceSmallDot(&Combined, 275, 400);
+	PlaceSmallDot(&Combined, 298, 400);
+	PlaceSmallDot(&Combined, 343, 400);
+	PlaceSmallDot(&Combined, 366, 400);
+	PlaceSmallDot(&Combined, 389, 400);
+	PlaceSmallDot(&Combined, 434, 400);
+	PlaceSmallDot(&Combined, 457, 400);
+	PlaceSmallDot(&Combined, 479, 400);
+	PlaceSmallDot(&Combined, 502, 400); //2nd Row from bottom
+
+	PlaceSmallDot(&Combined, 139, 331);
+	PlaceSmallDot(&Combined, 298, 331);
+	PlaceSmallDot(&Combined, 343, 331);
+	PlaceSmallDot(&Combined, 502, 331); //misc dots
+
+	PlaceSmallDot(&Combined, 161, 377);
+	PlaceSmallDot(&Combined, 207, 377);
+	PlaceSmallDot(&Combined, 252, 377);
+	PlaceSmallDot(&Combined, 389, 377);
+	PlaceSmallDot(&Combined, 434, 377);
+	PlaceSmallDot(&Combined, 479, 377);	//misc dots
+
+	PlaceSmallDot(&Combined, 139, 422);
+	PlaceSmallDot(&Combined, 298, 422);
+	PlaceSmallDot(&Combined, 343, 422);
+	PlaceSmallDot(&Combined, 502, 422);
+
+	PlaceBigDot(  &Combined, 139, 58);
+	PlaceSmallDot(&Combined, 298, 58);
+	PlaceSmallDot(&Combined, 343, 58);
+	PlaceBigDot(  &Combined, 502, 58);
+
+	PlaceSmallDot(&Combined, 252, 104);
+	PlaceSmallDot(&Combined, 252, 127);
+	PlaceSmallDot(&Combined, 275, 127);
+	PlaceSmallDot(&Combined, 298, 127);
+
+	PlaceSmallDot(&Combined, 389, 104);
+	PlaceSmallDot(&Combined, 389, 127);
+	PlaceSmallDot(&Combined, 366, 127);
+	PlaceSmallDot(&Combined, 343, 127); 
+
+	PlaceSmallDot(&Combined, 139, 104);
+	PlaceSmallDot(&Combined, 139, 127);
+	PlaceSmallDot(&Combined, 161, 127);
+	PlaceSmallDot(&Combined, 184, 127);
+	PlaceSmallDot(&Combined, 457, 127);
+	PlaceSmallDot(&Combined, 479, 127);
+	PlaceSmallDot(&Combined, 502, 127);
+	PlaceSmallDot(&Combined, 502, 104);
+
+
+	PlaceSmallDot(&Combined, 434, 59 ); 
+	PlaceSmallDot(&Combined, 434, 104);
+	PlaceSmallDot(&Combined, 434, 127);
+	PlaceSmallDot(&Combined, 434, 150);
+	PlaceSmallDot(&Combined, 434, 173);
+	PlaceSmallDot(&Combined, 434, 195);
+	PlaceSmallDot(&Combined, 434, 218);
+	PlaceSmallDot(&Combined, 434, 241);
+	PlaceSmallDot(&Combined, 434, 263);
+	PlaceSmallDot(&Combined, 434, 286);
+	PlaceSmallDot(&Combined, 434, 331);
+	PlaceSmallDot(&Combined, 434, 377); //Left Vertical Column
+
+	PlaceSmallDot(&Combined, 207, 59 ); 
+	PlaceSmallDot(&Combined, 207, 104);
+	PlaceSmallDot(&Combined, 207, 127);
+	PlaceSmallDot(&Combined, 207, 150);
+	PlaceSmallDot(&Combined, 207, 173);
+	PlaceSmallDot(&Combined, 207, 195);
+	PlaceSmallDot(&Combined, 207, 218);
+	PlaceSmallDot(&Combined, 207, 241);
+	PlaceSmallDot(&Combined, 207, 263);
+	PlaceSmallDot(&Combined, 207, 286);
+	PlaceSmallDot(&Combined, 207, 331);
+	PlaceSmallDot(&Combined, 207, 377); //Right Vertical Column
+
+	#pragma endregion
+
 
 	Coordinates old = {300,300};
 	Coordinates new = {321,264};	//Starting Coordinates
@@ -250,8 +426,6 @@ static void Move_PacmanDown(uint16_t ***pacMan, int xCenter, int yCenter, void *
 static void Move_PacmanLeft(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base){}
 static void Move_PacmanRight(uint16_t ***pacMan, int xCenter, int yCenter, void *virtual_base){}
 
-
-
 static uint16_t** CreateArray(int xSize, int ySize){
 	uint16_t **temp = malloc(sizeof(uint16_t*) * xSize);
 	int i;
@@ -289,3 +463,10 @@ static void PlacePacMan(uint16_t ***array, uint16_t **gameboard, uint16_t ** pac
 			PlacePixel(array, x, y, pacman[x - new.x+9][y - new.y+9]);
 }
 
+static void PlaceSmallDot(uint16_t ***array, uint16_t x, uint16_t y){
+	PlaceBox(array, x-2, y-2, x+2, y+2, WHITE);
+}
+
+static void PlaceBigDot(uint16_t ***array, uint16_t x, uint16_t y){
+	PlaceBox(array, x-8, y-8, x+8, y+8, WHITE);
+}
