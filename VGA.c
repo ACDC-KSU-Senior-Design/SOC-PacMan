@@ -82,6 +82,18 @@ void VGA_draw_buffer_NoColor(uint16_t **pixel_buff, short color, void *virtual_b
 				VGA_setPixel(y, x, pixel_buff[x][y], virtual_base);
 }
 
+void VGA_draw_buffer_Section(uint16_t **pixel_buff, int x1, int y1, int x2, int y2, void *virtual_base){
+	uint16_t x, y, xMin, xMax, yMin, yMax;
+	xMin = MIN(x1, x2);
+	xMax = MAX(x1, x2);
+	yMin = MIN(y1, y2);
+	yMax = MAX(y1, y2);
+
+	for(x = xMin; x < xMax; x++)
+		for(y = yMin; y < yMax; y++)
+			VGA_setPixel(y, x, pixel_buff[x][y], virtual_base);
+}
+
 void VGA_line(int x1, int y1, int x2, int y2, short pixel_color, void *virtual_base){
 	uint32_t row, col, xmax, xmin, ymax, ymin;
 	
@@ -109,7 +121,6 @@ void VGA_line(int x1, int y1, int x2, int y2, short pixel_color, void *virtual_b
 			VGA_setPixel(col, ((uint32_t) (((double)col-b)/m)), pixel_color, virtual_base);
 		}
 	}
-
 }
 
 void VGA_circle(int x, int y, int radius, short pixel_color, void *virtual_base){

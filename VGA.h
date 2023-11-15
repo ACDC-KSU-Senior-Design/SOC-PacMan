@@ -26,6 +26,7 @@ void VGA_text_clear(void *virtual_base);
 
 void VGA_draw_buffer(uint16_t **pixel_buff, void *virtual_base);
 void VGA_draw_buffer_NoColor(uint16_t **pixel_buff, short color, void *virtual_base);
+void VGA_draw_buffer_Section(uint16_t **pixel_buff, int x1, int y1, int x2, int y2, void *virtual_base);
 
 void VGA_line(int x1, int y1, int x2, int y2, short pixel_color, void *virtual_base);
 void VGA_circle(int x, int y, int radius, short pixel_color, void *virtual_base);
