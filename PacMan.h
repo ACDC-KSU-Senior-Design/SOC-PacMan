@@ -2,6 +2,7 @@
 #define __PACMAN_H
 
 #include "VGA.h"
+#include <stdbool.h>
 
  
 typedef enum
@@ -14,6 +15,7 @@ typedef enum
 
 
 void InitGameBoard(void *virtual_base);
+bool MovePacman(Direction NewDirection, void *virtual_base);
 void FreeGameBoard();
  
 

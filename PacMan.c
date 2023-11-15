@@ -1,5 +1,6 @@
 #include "PacMan.h"
 #include "stdlib.h"
+#include <unistd.h>
 
 #define MAX(a,b) (a > b ? a : b)
 #define MIN(a,b) (a > b ? b : a)
@@ -19,14 +20,13 @@ static uint16_t **PacMan;
 static uint16_t **Combined;
 
 // Pacman Variables
-static Direction NewDirection;
 static Direction PrevDirection;
-// 0=closed, 1=almost_closed, half_open, fully_open, half_open, almost_closed
 static int AnimationPhase = 0;
 
 
 static uint16_t** CreateArray(int xSize, int ySize);
 static void PlaceBox(uint16_t ***array, int x1, int y1, int x2, int y2, short color);
+static void PlaceLine(uint16_t ***array, int x1, int y1, int x2, int y2, short color);
 static void PlacePixel(uint16_t ***array, int x, int y, short color);
 static void PlacePacMan(uint16_t ***array, uint16_t **gameboard, uint16_t ** pacman, Coordinates old, Coordinates new);
 static void PlaceSmallDot(uint16_t ***array, uint16_t x, uint16_t y);
@@ -297,9 +297,17 @@ void InitGameBoard(void *virtual_base){
 
 	#pragma endregion
 
+	#pragma region InitLogo
+
+
+
+	#pragma endregion
+
 
 	Coordinates old = {300,300};
 	Coordinates new = {321,264};	//Starting Coordinates
+
+	VGA_draw_buffer(Combined, virtual_base);
 
 	int i;
 	while(1)
@@ -309,40 +317,46 @@ void InitGameBoard(void *virtual_base){
 			ResetPacmanBuffer(&PacMan);
 			PacManBufferTooRight(&PacMan, i);
 			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-			VGA_draw_buffer(Combined, virtual_base);		
+			VGA_draw_buffer_Section(Combined, new.x - 10, new.y - 10, new.x + 10, new.y + 10, virtual_base);		
+			usleep(1000 * 50);
 		}
 		for (i = 0; i <= 5; i++)
 		{
 			ResetPacmanBuffer(&PacMan);
 			PacManBufferTooLeft(&PacMan, i);
 			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-			VGA_draw_buffer(Combined, virtual_base);			
+			VGA_draw_buffer_Section(Combined, new.x - 10, new.y - 10, new.x + 10, new.y + 10, virtual_base);		
+			usleep(1000 * 50);
 		}
 		for (i = 0; i <= 5; i++)
 		{
 			ResetPacmanBuffer(&PacMan);
 			PacManBufferTooUp(&PacMan, i);
 			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-			VGA_draw_buffer(Combined, virtual_base);			
+			VGA_draw_buffer_Section(Combined, new.x - 10, new.y - 10, new.x + 10, new.y + 10, virtual_base);		
+			usleep(1000 * 50);
 		}
 		for (i = 0; i <= 5; i++)
 		{
 			ResetPacmanBuffer(&PacMan);
 			PacManBufferTooDown(&PacMan, i);
 			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-			VGA_draw_buffer(Combined, virtual_base);			
+			VGA_draw_buffer_Section(Combined, new.x - 10, new.y - 10, new.x + 10, new.y + 10, virtual_base);		
+			usleep(1000 * 50);
 		}
-
 	}
 
-
+	
 	PacManBufferTooRight(&PacMan, 1);
 	PlacePacMan(&Combined, GameBoard, PacMan, old, new);
 
 
 	//Dark Blue 0xce43
 	VGA_draw_buffer(Combined, virtual_base);
+}
 
+bool MovePacman(Direction NewDirection, void *virtual_base){	//Return bool could be to tell if pacman is moving or stuck on a wall
+	return true;
 }
 
 static void InitializePacMan(uint16_t ***pacMan)
@@ -609,6 +623,35 @@ static void PlaceBox(uint16_t ***array, int x1, int y1, int x2, int y2, short co
 	for (x = xMin; x <= xMax; x++)
 		for (y = yMin; y <= yMax; ++y)
 			PlacePixel(array, x , y, color);
+}
+
+static void PlaceLine(uint16_t ***array, int x1, int y1, int x2, int y2, short color){
+	uint32_t row, col, xmax, xmin, ymax, ymin;
+	
+	if(x1 == x2 || y1 == y2){
+		PlaceBox(array, x1, y1, x2, y2, color);
+		return;
+	}
+	
+	double m = ((double)(y2 - y1)) / ((double)(x2 - x1));	//Slope
+	int b = -(m * x1) + y1;
+	
+	xmax = MIN(MAX(x1,x2), 640);
+	xmin = MIN(MIN(x1,x2), 640);
+	ymax = MIN(MAX(y1,y2), 480);
+	ymin = MIN(MIN(y1,y2), 480);
+	
+	//printf("x1: %d, y1: %d, x2: %d, y2: %d, Slope: %f, Offset: %d\n", x1, y1, x2, y2, m, b);
+	
+	if(m >= -1 && m <= 1){	//Slope > 1
+		for(row = xmin; row < xmax; row++){
+			PlacePixel(array, row, (uint32_t)(m*row + b), color);
+		}
+	} else {
+		for(col = ymin; col < ymax; col++){
+			PlacePixel(array, (uint32_t) (((double)col-b)/m), col, color);
+		}
+	}
 }
 
 static void PlacePixel(uint16_t ***array, int x, int y, short color){
