@@ -15,6 +15,7 @@
 #define DARK_RED    0x7FE0
 #define WHITE		0xFFFF
 #define DARK_PINK   0xe2c2
+#define TRANSPARENT 0xFFFE //Not actually transparent, just wont draw this color
 
 void VGA_clear(void *virtual_base);
 
