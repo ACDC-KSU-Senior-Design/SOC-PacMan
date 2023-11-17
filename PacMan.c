@@ -1,11 +1,12 @@
 #include "PacMan.h"
 #include "stdlib.h"
+#include <stdio.h>
 #include <unistd.h>
 
 #define MAX(a,b) (a > b ? a : b)
 #define MIN(a,b) (a > b ? b : a)
 
-#define PackMan_Color 0xFD
+#define PacMan_Color 0xFD
 
 typedef struct{
     uint16_t x;
@@ -14,16 +15,19 @@ typedef struct{
 
 // https://www.pixilart.com/draw/mine-is-the-coordinates-4e1b3d00ba4c277
 
-
+static uint16_t **GameLines;
 static uint16_t **GameBoard;
 static uint16_t **PacMan;
 static uint16_t **Combined;
+
+static Coordinates PacMan_Old = {320,355};
+static Direction PacMan_OldDir;
 
 // Pacman Variables
 static Direction PrevDirection;
 static int AnimationPhase = 0;
 
-
+#pragma region Static Function Declarations
 static uint16_t** CreateArray(int xSize, int ySize);
 static void PlaceBox(uint16_t ***array, int x1, int y1, int x2, int y2, short color);
 static void PlaceLine(uint16_t ***array, int x1, int y1, int x2, int y2, short color);
@@ -31,6 +35,7 @@ static void PlacePixel(uint16_t ***array, int x, int y, short color);
 static void PlacePacMan(uint16_t ***array, uint16_t **gameboard, uint16_t ** pacman, Coordinates old, Coordinates new);
 static void PlaceSmallDot(uint16_t ***array, uint16_t x, uint16_t y);
 static void PlaceBigDot(uint16_t ***array, uint16_t x, uint16_t y);
+static void PlaceSpriteWithTransparency(uint16_t **Combined, uint16_t **GameBoard, uint16_t ***Sprite, Coordinates spriteCoord);
 
 static void InitializePacMan(uint16_t ***pacMan);
 static void Move_Pacman(uint16_t ***pacMan, int xCenter, int yCenter, Direction NewDirection, Direction PrevDirection, void *virtual_base);
@@ -39,15 +44,17 @@ static void PacManBufferTooLeft(uint16_t ***pacMan, int CurrPhase);
 static void PacManBufferTooRight(uint16_t ***pacMan, int CurrPhase);
 static void PacManBufferTooDown(uint16_t ***pacMan, int CurrPhase);
 static void ResetPacmanBuffer(uint16_t ***pacMan);
-
+static bool CheckForLine(uint16_t **GameLinesArr, Coordinates PmCoordinates, Direction NewDirection);
+#pragma endregion
 
 void InitGameBoard(void *virtual_base){
 
 	uint16_t pixel_color = LIGHT_BLUE;
 
-    GameBoard = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
 	PacMan = CreateArray(19, 19);
+    GameBoard = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
 	Combined = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
+	GameLines = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
 	
 	#pragma region InitGameboard
 	PlaceBox(&GameBoard, 105,   3, 535,  24, pixel_color);
@@ -297,106 +304,173 @@ void InitGameBoard(void *virtual_base){
 
 	#pragma endregion
 
+	#pragma region GameLines
+	PlaceBox(&GameLines, 138, 36 , 297, 36 , WHITE);
+	PlaceBox(&GameLines, 138, 36 , 138, 128, WHITE);
+	PlaceBox(&GameLines, 138, 82 , 206, 82 , WHITE);
+	PlaceBox(&GameLines, 138, 128, 205, 128, WHITE);
+	PlaceBox(&GameLines, 297, 36 , 297, 82 , WHITE);
+	PlaceBox(&GameLines, 206, 82 , 297, 82 , WHITE);
+	PlaceBox(&GameLines, 252, 82 , 252, 127, WHITE);
+	PlaceBox(&GameLines, 206, 36 , 206, 400, WHITE);
+	PlaceBox(&GameLines, 206, 400, 138, 400, WHITE);
+	PlaceBox(&GameLines, 138, 400, 138, 445, WHITE);
+	PlaceBox(&GameLines, 138, 445, 502, 445, WHITE);
+	PlaceBox(&GameLines, 502, 445, 502, 400, WHITE);
+	PlaceBox(&GameLines, 343, 36 , 502, 36 , WHITE);
+	PlaceBox(&GameLines, 433, 400, 433, 36 , WHITE);
+	PlaceBox(&GameLines, 502, 36 , 502, 128, WHITE);
+	PlaceBox(&GameLines, 502, 128, 433, 128, WHITE);
+	PlaceBox(&GameLines, 501, 82 , 433, 82 , WHITE);
+	PlaceBox(&GameLines, 502, 82 , 138, 82 , WHITE);
+	PlaceBox(&GameLines, 297, 445, 297, 400, WHITE);
+	PlaceBox(&GameLines, 297, 400, 252, 400, WHITE);
+	PlaceBox(&GameLines, 252, 400, 252, 354, WHITE);
+	PlaceBox(&GameLines, 206, 355, 433, 355, WHITE);	// Start Position is in middle
+	PlaceBox(&GameLines, 343, 445, 343, 400, WHITE);
+	PlaceBox(&GameLines, 343, 400, 388, 400, WHITE);
+	PlaceBox(&GameLines, 388, 400, 388, 355, WHITE);
+	PlaceBox(&GameLines, 479, 400, 479, 355, WHITE);
+	PlaceBox(&GameLines, 479, 355, 502, 355, WHITE);
+	PlaceBox(&GameLines, 502, 355, 502, 309, WHITE);
+	PlaceBox(&GameLines, 502, 309, 343, 309, WHITE);
+	PlaceBox(&GameLines, 343, 309, 343, 355, WHITE);
+	PlaceBox(&GameLines, 433, 400, 502, 400, WHITE);
+	PlaceBox(&GameLines, 161, 400, 161, 355, WHITE);
+	PlaceBox(&GameLines, 161, 355, 138, 355, WHITE);
+	PlaceBox(&GameLines, 138, 355, 138, 309, WHITE);
+	PlaceBox(&GameLines, 138, 309, 297, 309, WHITE);
+	PlaceBox(&GameLines, 297, 309, 297, 355, WHITE);
+	PlaceBox(&GameLines, 343, 36 , 343, 82 , WHITE);
+	PlaceBox(&GameLines, 388, 82 , 388, 127, WHITE);
+	PlaceBox(&GameLines, 388, 127, 342, 127, WHITE);
+	PlaceBox(&GameLines, 342, 127, 342, 175, WHITE);
+	PlaceBox(&GameLines, 252, 127, 297, 127, WHITE);
+	PlaceBox(&GameLines, 297, 127, 297, 175, WHITE);
+	PlaceBox(&GameLines, 252, 175, 387, 175, WHITE);
+	PlaceBox(&GameLines, 387, 175, 387, 309, WHITE);
+	PlaceBox(&GameLines, 252, 175, 252, 309, WHITE);
+	PlaceBox(&GameLines, 252, 264, 387, 264, WHITE);
+	PlaceBox(&GameLines, 387, 219, 557, 219, WHITE);
+	PlaceBox(&GameLines, 252, 219, 82 , 219, WHITE);
+	PlaceBox(&GameLines, 320, 176, 320, 219, DARK_RED);
+	PlaceBox(&GameLines, 342, 219, 297, 219, DARK_RED);
+	#pragma endregion
+
 	#pragma region InitLogo
-
-
 
 	#pragma endregion
 
-
-	Coordinates old = {300,300};
-	Coordinates new = {321,264};	//Starting Coordinates
-
-	VGA_draw_buffer(Combined, virtual_base);
-
-	int i;
-	while(1)
-	{
-		for (i = 0; i <= 5; i++)
-		{
-			ResetPacmanBuffer(&PacMan);
-			PacManBufferTooRight(&PacMan, i);
-			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-			VGA_draw_buffer_Section(Combined, new.x - 10, new.y - 10, new.x + 10, new.y + 10, virtual_base);		
-			usleep(1000 * 50);
-		}
-		for (i = 0; i <= 5; i++)
-		{
-			ResetPacmanBuffer(&PacMan);
-			PacManBufferTooLeft(&PacMan, i);
-			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-			VGA_draw_buffer_Section(Combined, new.x - 10, new.y - 10, new.x + 10, new.y + 10, virtual_base);		
-			usleep(1000 * 50);
-		}
-		for (i = 0; i <= 5; i++)
-		{
-			ResetPacmanBuffer(&PacMan);
-			PacManBufferTooUp(&PacMan, i);
-			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-			VGA_draw_buffer_Section(Combined, new.x - 10, new.y - 10, new.x + 10, new.y + 10, virtual_base);		
-			usleep(1000 * 50);
-		}
-		for (i = 0; i <= 5; i++)
-		{
-			ResetPacmanBuffer(&PacMan);
-			PacManBufferTooDown(&PacMan, i);
-			PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-			VGA_draw_buffer_Section(Combined, new.x - 10, new.y - 10, new.x + 10, new.y + 10, virtual_base);		
-			usleep(1000 * 50);
-		}
-	}
-
-	
-	PacManBufferTooRight(&PacMan, 1);
-	PlacePacMan(&Combined, GameBoard, PacMan, old, new);
-
-
 	//Dark Blue 0xce43
+	ResetPacmanBuffer(&PacMan);
+	PlacePacMan(&Combined, GameBoard, PacMan, PacMan_Old, PacMan_Old);
 	VGA_draw_buffer(Combined, virtual_base);
+	//VGA_draw_buffer_NoColor(GameLines, BLACK, virtual_base);
 }
 
 bool MovePacman(Direction NewDirection, void *virtual_base){	//Return bool could be to tell if pacman is moving or stuck on a wall
+	ResetPacmanBuffer(&PacMan);
+	Coordinates PacMan_New = PacMan_Old;
+
+	//printf("X: %d, Y: %d\n", PacMan_Old.x, PacMan_Old.y);
+	
+	int someConstValue = 1;
+
+	if(NewDirection != PacMan_OldDir && !CheckForLine(GameLines, PacMan_Old, NewDirection)) // if pacman changed directions and there is not a intersection
+		NewDirection = PacMan_OldDir;
+
+		//printf("X: %d, Y: %d, Line: %d\n",PacMan_New.x, PacMan_New.y, CheckForLine(GameLines, PacMan_Old, NewDirection));
+		int x = PacMan_Old.x;
+		int y = PacMan_Old.y;
+		printf("\n%d %d %d\n%d %d %d\t%s\n%d %d %d\n", GameLines[x-1][y-1] > 1 ? 1 : 0, GameLines[x+0][y-1] > 1 ? 1 : 0, GameLines[x+1][y-1] > 1 ? 1 : 0,
+												   GameLines[x-1][y+0] > 1 ? 1 : 0, GameLines[x+0][y+0] > 1 ? 1 : 0, GameLines[x+1][y+0] > 1 ? 1 : 0, NewDirection == RIGHT ? "Right" : NewDirection == LEFT ? "Left"  : NewDirection == DOWN  ? "DOWN" : "UP", 
+												   GameLines[x-1][y+1] > 1 ? 1 : 0, GameLines[x+0][y+1] > 1 ? 1 : 0, GameLines[x+1][y+1] > 1 ? 1 : 0);
+
+	switch(NewDirection){
+		case UP:
+			if(CheckForLine(GameLines, PacMan_Old, UP)){ // if there is a line in that direction
+				PacManBufferTooUp(&PacMan, AnimationPhase);
+				PacMan_New.y -= someConstValue;								//move it in that direction
+			}
+				//Would need a else if our constMoveValue is not 1 since it wouldnt let it hit a corner 
+		break;
+
+		case DOWN:
+			if(CheckForLine(GameLines, PacMan_Old, DOWN)){
+				PacManBufferTooDown(&PacMan, AnimationPhase);
+				PacMan_New.y += someConstValue;
+			}
+		break;
+
+		case LEFT:
+			if(CheckForLine(GameLines, PacMan_Old, LEFT)){
+				PacManBufferTooLeft(&PacMan, AnimationPhase);
+				PacMan_New.x -= someConstValue;
+			}
+		break;
+
+		case RIGHT:
+			if(CheckForLine(GameLines, PacMan_Old, RIGHT)){
+				PacManBufferTooRight(&PacMan, AnimationPhase);
+				PacMan_New.x += someConstValue;
+			}
+		break;
+	}
+	
+	AnimationPhase++;
+	PlaceSpriteWithTransparency(Combined, GameBoard, &PacMan, PacMan_New);
+	PlacePacMan(&Combined, GameBoard, PacMan, PacMan_Old, PacMan_New);
+	VGA_draw_buffer_Section(Combined, PacMan_Old.x - 10, PacMan_Old.y - 10, PacMan_New.x + 10, PacMan_New.y + 11, virtual_base);
+	PacMan_Old = PacMan_New;
+	PacMan_OldDir = NewDirection;
 	return true;
 }
 
+void FreeGameBoard(){
+	free(GameBoard);
+	free(PacMan);
+	free(Combined);
+}
+
+#pragma region Static Functions
 static void InitializePacMan(uint16_t ***pacMan)
 {
-	PlaceBox(pacMan, 0, 0, 18, 18, PackMan_Color);
+	PlaceBox(pacMan, 0, 0, 18, 18, PacMan_Color);
 	// Top Left Corner too black
-	PlaceBox(pacMan, 0, 0, 6, 0, BLACK);
-	PlaceBox(pacMan, 0, 1, 4, 1, BLACK);
-	PlaceBox(pacMan, 0, 2, 2, 2, BLACK);
-	PlaceBox(pacMan, 0, 3, 1, 3, BLACK);
-	PlaceBox(pacMan, 0, 4, 1, 4, BLACK);
-	PlaceBox(pacMan, 0, 5, 0, 5, BLACK);
-	PlaceBox(pacMan, 0, 6, 0, 6, BLACK);
+	PlaceBox(pacMan, 0, 0, 6, 0, TRANSPARENT);
+	PlaceBox(pacMan, 0, 1, 4, 1, TRANSPARENT);
+	PlaceBox(pacMan, 0, 2, 2, 2, TRANSPARENT);
+	PlaceBox(pacMan, 0, 3, 1, 3, TRANSPARENT);
+	PlaceBox(pacMan, 0, 4, 1, 4, TRANSPARENT);
+	PlaceBox(pacMan, 0, 5, 0, 5, TRANSPARENT);
+	PlaceBox(pacMan, 0, 6, 0, 6, TRANSPARENT);
 
-	// Bottom Left Corner too black
-	PlaceBox(pacMan, 0, 12, 0, 12, BLACK);
-	PlaceBox(pacMan, 0, 13, 0, 13, BLACK);
-	PlaceBox(pacMan, 0, 14, 1, 14, BLACK);
-	PlaceBox(pacMan, 0, 15, 1, 15, BLACK);
-	PlaceBox(pacMan, 0, 16, 2, 16, BLACK);
-	PlaceBox(pacMan, 0, 17, 5, 17, BLACK);
-	PlaceBox(pacMan, 0, 18, 6, 18, BLACK);
+	// Bottom Left Corner too TRANSPARENT
+	PlaceBox(pacMan, 0, 12, 0, 12, TRANSPARENT);
+	PlaceBox(pacMan, 0, 13, 0, 13, TRANSPARENT);
+	PlaceBox(pacMan, 0, 14, 1, 14, TRANSPARENT);
+	PlaceBox(pacMan, 0, 15, 1, 15, TRANSPARENT);
+	PlaceBox(pacMan, 0, 16, 2, 16, TRANSPARENT);
+	PlaceBox(pacMan, 0, 17, 5, 17, TRANSPARENT);
+	PlaceBox(pacMan, 0, 18, 6, 18, TRANSPARENT);
 
-	// Top Right Corner too black
-	PlaceBox(pacMan, 12, 0, 18, 0, BLACK);
-	PlaceBox(pacMan, 14, 0, 18, 1, BLACK);
-	PlaceBox(pacMan, 16, 1, 18, 2, BLACK);
-	PlaceBox(pacMan, 17, 1, 18, 3, BLACK);
-	PlaceBox(pacMan, 17, 2, 18, 4, BLACK);
-	PlaceBox(pacMan, 18, 4, 18, 5, BLACK);
-	PlaceBox(pacMan, 18, 6, 18, 6, BLACK);
+	// Top Right Corner too TRANSPARENT
+	PlaceBox(pacMan, 12, 0, 18, 0, TRANSPARENT);
+	PlaceBox(pacMan, 14, 0, 18, 1, TRANSPARENT);
+	PlaceBox(pacMan, 16, 1, 18, 2, TRANSPARENT);
+	PlaceBox(pacMan, 17, 1, 18, 3, TRANSPARENT);
+	PlaceBox(pacMan, 17, 2, 18, 4, TRANSPARENT);
+	PlaceBox(pacMan, 18, 4, 18, 5, TRANSPARENT);
+	PlaceBox(pacMan, 18, 6, 18, 6, TRANSPARENT);
 
-	// Bottom Right Corner too black
-	PlaceBox(pacMan, 18, 12, 18, 12, BLACK);
-	PlaceBox(pacMan, 18, 13, 18, 13, BLACK);
-	PlaceBox(pacMan, 17, 14, 18, 14, BLACK);
-	PlaceBox(pacMan, 17, 15, 18, 15, BLACK);
-	PlaceBox(pacMan, 16, 16, 18, 16, BLACK);
-	PlaceBox(pacMan, 14, 17, 18, 17, BLACK);
-	PlaceBox(pacMan, 13, 18, 18, 18, BLACK);
+	// Bottom Right Corner too TRANSPARENT
+	PlaceBox(pacMan, 18, 12, 18, 12, TRANSPARENT);
+	PlaceBox(pacMan, 18, 13, 18, 13, TRANSPARENT);
+	PlaceBox(pacMan, 17, 14, 18, 14, TRANSPARENT);
+	PlaceBox(pacMan, 17, 15, 18, 15, TRANSPARENT);
+	PlaceBox(pacMan, 16, 16, 18, 16, TRANSPARENT);
+	PlaceBox(pacMan, 14, 17, 18, 17, TRANSPARENT);
+	PlaceBox(pacMan, 13, 18, 18, 18, TRANSPARENT);
 
 }
 
@@ -426,183 +500,202 @@ static void Move_Pacman(uint16_t ***pacMan, int xCenter, int yCenter, Direction 
 static void ResetPacmanBuffer(uint16_t ***pacMan)
 {
 	//Middle too yellow
-	PlaceBox(pacMan, 7, 0, 11, 18, PackMan_Color);
+	PlaceBox(pacMan, 7, 0, 11, 18, PacMan_Color);
 	//Left half too yellow
-	PlaceBox(pacMan, 5, 1, 6, 17, PackMan_Color);
-	PlaceBox(pacMan, 3, 2, 4, 16, PackMan_Color);
-	PlaceBox(pacMan, 2, 3, 2, 15, PackMan_Color);
-	PlaceBox(pacMan, 1, 5, 1, 13, PackMan_Color);
-	PlaceBox(pacMan, 0, 7, 0, 11, PackMan_Color);
+	PlaceBox(pacMan, 5, 1, 6, 17, PacMan_Color);
+	PlaceBox(pacMan, 3, 2, 4, 16, PacMan_Color);
+	PlaceBox(pacMan, 2, 3, 2, 15, PacMan_Color);
+	PlaceBox(pacMan, 1, 5, 1, 13, PacMan_Color);
+	PlaceBox(pacMan, 0, 7, 0, 11, PacMan_Color);
 	//Right half too yellow
-	PlaceBox(pacMan, 12, 1, 13, 17, PackMan_Color);
-	PlaceBox(pacMan, 14, 2, 15, 16, PackMan_Color);
-	PlaceBox(pacMan, 16, 3, 16, 15, PackMan_Color);
-	PlaceBox(pacMan, 17, 5, 17, 13, PackMan_Color);
-	PlaceBox(pacMan, 18, 7, 18, 11, PackMan_Color);	
+	PlaceBox(pacMan, 12, 1, 13, 17, PacMan_Color);
+	PlaceBox(pacMan, 14, 2, 15, 16, PacMan_Color);
+	PlaceBox(pacMan, 16, 3, 16, 15, PacMan_Color);
+	PlaceBox(pacMan, 17, 5, 17, 13, PacMan_Color);
+	PlaceBox(pacMan, 18, 7, 18, 11, PacMan_Color);	
 }	
 static void PacManBufferTooUp(uint16_t ***pacMan, int CurrPhase)
 {
 	//ResetPacmanBuffer(pacMan);
-	switch(CurrPhase)
+	switch(CurrPhase % 6)
 	{
 		case 0:		// Closed			
 			break;
 
 		case 1:		// Almost Closed
 		case 5:
-			PlaceBox(pacMan, 7, 0, 11, 2, BLACK);
-			PlaceBox(pacMan, 8, 3, 10, 7, BLACK);
-			PlaceBox(pacMan, 9, 9, 9, 8, BLACK);		
+			PlaceBox(pacMan, 7, 0, 11, 2, TRANSPARENT);
+			PlaceBox(pacMan, 8, 3, 10, 7, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 9, 8, TRANSPARENT);		
 			break;
 	
 		case 2:		// Half Open
 		case 4:
-			PlaceBox(pacMan, 7, 0, 11, 6, BLACK);
-			PlaceBox(pacMan, 5, 1, 6, 2, BLACK);
-			PlaceBox(pacMan, 6, 3, 6, 3, BLACK);
-			PlaceBox(pacMan, 12, 1, 13, 2, BLACK);
-			PlaceBox(pacMan, 12, 3, 12, 3, BLACK);
-			PlaceBox(pacMan, 8, 7, 10, 7, BLACK);
-			PlaceBox(pacMan, 9, 8, 9, 9, BLACK);
+			PlaceBox(pacMan, 7, 0, 11, 6, TRANSPARENT);
+			PlaceBox(pacMan, 5, 1, 6, 2, TRANSPARENT);
+			PlaceBox(pacMan, 6, 3, 6, 3, TRANSPARENT);
+			PlaceBox(pacMan, 12, 1, 13, 2, TRANSPARENT);
+			PlaceBox(pacMan, 12, 3, 12, 3, TRANSPARENT);
+			PlaceBox(pacMan, 8, 7, 10, 7, TRANSPARENT);
+			PlaceBox(pacMan, 9, 8, 9, 9, TRANSPARENT);
 			break;
 
 		case 3:		// Fully Open
-			PlaceBox(pacMan, 7, 0, 11, 7, BLACK);
-			PlaceBox(pacMan, 5, 1, 6, 5, BLACK);
-			PlaceBox(pacMan, 3, 2, 4, 3, BLACK);
-			PlaceBox(pacMan, 4, 4, 4, 4, BLACK);
-			PlaceBox(pacMan, 6, 6, 6, 6, BLACK);
-			PlaceBox(pacMan, 8, 8, 10, 8, BLACK);
-			PlaceBox(pacMan, 9, 9, 9, 9, BLACK);
-			PlaceBox(pacMan, 12, 1, 13, 5, BLACK);
-			PlaceBox(pacMan, 14, 2, 15, 3, BLACK);
-			PlaceBox(pacMan, 12, 6, 12, 6, BLACK);
-			PlaceBox(pacMan, 14, 4, 14, 4, BLACK);
+			PlaceBox(pacMan, 7, 0, 11, 7, TRANSPARENT);
+			PlaceBox(pacMan, 5, 1, 6, 5, TRANSPARENT);
+			PlaceBox(pacMan, 3, 2, 4, 3, TRANSPARENT);
+			PlaceBox(pacMan, 4, 4, 4, 4, TRANSPARENT);
+			PlaceBox(pacMan, 6, 6, 6, 6, TRANSPARENT);
+			PlaceBox(pacMan, 8, 8, 10, 8, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 9, 9, TRANSPARENT);
+			PlaceBox(pacMan, 12, 1, 13, 5, TRANSPARENT);
+			PlaceBox(pacMan, 14, 2, 15, 3, TRANSPARENT);
+			PlaceBox(pacMan, 12, 6, 12, 6, TRANSPARENT);
+			PlaceBox(pacMan, 14, 4, 14, 4, TRANSPARENT);
 			break;		
 	}
 
 }
 static void PacManBufferTooDown(uint16_t ***pacMan, int CurrPhase)
 {
-	switch(CurrPhase)
+	switch(CurrPhase % 6)
 	{
 		case 0:		// Closed			
 			break;
 
 		case 1:		// Almost Closed
 		case 5:
-			PlaceBox(pacMan, 7, 16, 11, 18, BLACK);
-			PlaceBox(pacMan, 8, 11, 10, 15, BLACK);
-			PlaceBox(pacMan, 9, 9, 9, 10, BLACK);		
+			PlaceBox(pacMan, 7, 16, 11, 18, TRANSPARENT);
+			PlaceBox(pacMan, 8, 11, 10, 15, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 9, 10, TRANSPARENT);		
 			break;
 	
 		case 2:		// Half Open
 		case 4:
-			PlaceBox(pacMan, 7, 12, 11, 18, BLACK);
-			PlaceBox(pacMan, 5, 16, 6, 17, BLACK);
-			PlaceBox(pacMan, 6, 15, 6, 15, BLACK);
-			PlaceBox(pacMan, 12, 16, 13, 17, BLACK);
-			PlaceBox(pacMan, 12, 15, 12, 15, BLACK);
-			PlaceBox(pacMan, 8, 11, 10, 11, BLACK);
-			PlaceBox(pacMan, 9, 9, 9, 10, BLACK);
-			PlaceBox(pacMan, 5, 16, 13, 18, BLACK); // debug 
+			PlaceBox(pacMan, 7, 12, 11, 18, TRANSPARENT);
+			PlaceBox(pacMan, 5, 16, 6, 17, TRANSPARENT);
+			PlaceBox(pacMan, 6, 15, 6, 15, TRANSPARENT);
+			PlaceBox(pacMan, 12, 16, 13, 17, TRANSPARENT);
+			PlaceBox(pacMan, 12, 15, 12, 15, TRANSPARENT);
+			PlaceBox(pacMan, 8, 11, 10, 11, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 9, 10, TRANSPARENT);
+			PlaceBox(pacMan, 5, 16, 13, 18, TRANSPARENT); // debug 
 			break;
 
 		case 3:		// Fully Open
-			PlaceBox(pacMan, 7, 11, 11, 18, BLACK);
-			PlaceBox(pacMan, 8, 10, 10, 10, BLACK);
-			PlaceBox(pacMan, 9, 9, 9, 9, BLACK);
-			PlaceBox(pacMan, 5, 13, 6, 17, BLACK);
-			PlaceBox(pacMan, 3, 15, 4, 16, BLACK);
-			PlaceBox(pacMan, 4, 14, 4, 14, BLACK);
-			PlaceBox(pacMan, 6, 12, 6, 12, BLACK);
-			PlaceBox(pacMan, 12, 12, 12, 12, BLACK);
-			PlaceBox(pacMan, 14, 14, 14, 14, BLACK);
-			PlaceBox(pacMan, 12, 13, 13, 17, BLACK);
-			PlaceBox(pacMan, 14, 15, 15, 16, BLACK);
+			PlaceBox(pacMan, 7, 11, 11, 18, TRANSPARENT);
+			PlaceBox(pacMan, 8, 10, 10, 10, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 9, 9, TRANSPARENT);
+			PlaceBox(pacMan, 5, 13, 6, 17, TRANSPARENT);
+			PlaceBox(pacMan, 3, 15, 4, 16, TRANSPARENT);
+			PlaceBox(pacMan, 4, 14, 4, 14, TRANSPARENT);
+			PlaceBox(pacMan, 6, 12, 6, 12, TRANSPARENT);
+			PlaceBox(pacMan, 12, 12, 12, 12, TRANSPARENT);
+			PlaceBox(pacMan, 14, 14, 14, 14, TRANSPARENT);
+			PlaceBox(pacMan, 12, 13, 13, 17, TRANSPARENT);
+			PlaceBox(pacMan, 14, 15, 15, 16, TRANSPARENT);
 			break;		
 	}
 }
 static void PacManBufferTooLeft(uint16_t ***pacMan, int CurrPhase)
 {
-	switch(CurrPhase)
+	switch(CurrPhase % 6)
 	{
 		case 0:		// Closed			
 			break;
 
 		case 1:		// Almost Closed
 		case 5:
-			PlaceBox(pacMan, 0, 7, 2, 11, BLACK);
-			PlaceBox(pacMan, 3, 8, 7, 10, BLACK);
-			PlaceBox(pacMan, 8, 9, 9, 9, BLACK);		
+			PlaceBox(pacMan, 0, 7, 2, 11, TRANSPARENT);
+			PlaceBox(pacMan, 3, 8, 7, 10, TRANSPARENT);
+			PlaceBox(pacMan, 8, 9, 9, 9, TRANSPARENT);		
 			break;
 	
 		case 2:		// Half Open
 		case 4:
-			PlaceBox(pacMan, 0, 7, 6, 11, BLACK);
-			PlaceBox(pacMan, 7, 8, 7, 10, BLACK);
-			PlaceBox(pacMan, 8, 9, 9, 9, BLACK);
-			PlaceBox(pacMan, 1, 12, 2, 13, BLACK);
-			PlaceBox(pacMan, 3, 12, 3, 12, BLACK);
-			PlaceBox(pacMan, 1, 5, 2, 6, BLACK);
-			PlaceBox(pacMan, 3, 6, 3, 6, BLACK);
+			PlaceBox(pacMan, 0, 7, 6, 11, TRANSPARENT);
+			PlaceBox(pacMan, 7, 8, 7, 10, TRANSPARENT);
+			PlaceBox(pacMan, 8, 9, 9, 9, TRANSPARENT);
+			PlaceBox(pacMan, 1, 12, 2, 13, TRANSPARENT);
+			PlaceBox(pacMan, 3, 12, 3, 12, TRANSPARENT);
+			PlaceBox(pacMan, 1, 5, 2, 6, TRANSPARENT);
+			PlaceBox(pacMan, 3, 6, 3, 6, TRANSPARENT);
 			break;
 
 		case 3:		// Fully Open
-			PlaceBox(pacMan, 0, 7, 7, 11, BLACK);
-			PlaceBox(pacMan, 1, 12, 5, 13, BLACK);
-			PlaceBox(pacMan, 1, 5, 5, 6, BLACK);
-			PlaceBox(pacMan, 2, 3, 3, 4, BLACK);
-			PlaceBox(pacMan, 2, 14, 3, 15, BLACK);
-			PlaceBox(pacMan, 4, 14, 4, 14, BLACK);
-			PlaceBox(pacMan, 6, 12, 6, 12, BLACK);
-			PlaceBox(pacMan, 4, 4, 4, 4, BLACK);
-			PlaceBox(pacMan, 6, 6, 6, 6, BLACK);
-			PlaceBox(pacMan, 8, 8, 8, 10, BLACK);
-			PlaceBox(pacMan, 9, 9, 9, 9, BLACK);
+			PlaceBox(pacMan, 0, 7, 7, 11, TRANSPARENT);
+			PlaceBox(pacMan, 1, 12, 5, 13, TRANSPARENT);
+			PlaceBox(pacMan, 1, 5, 5, 6, TRANSPARENT);
+			PlaceBox(pacMan, 2, 3, 3, 4, TRANSPARENT);
+			PlaceBox(pacMan, 2, 14, 3, 15, TRANSPARENT);
+			PlaceBox(pacMan, 4, 14, 4, 14, TRANSPARENT);
+			PlaceBox(pacMan, 6, 12, 6, 12, TRANSPARENT);
+			PlaceBox(pacMan, 4, 4, 4, 4, TRANSPARENT);
+			PlaceBox(pacMan, 6, 6, 6, 6, TRANSPARENT);
+			PlaceBox(pacMan, 8, 8, 8, 10, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 9, 9, TRANSPARENT);
 			break;		
 	}	
 }
 static void PacManBufferTooRight(uint16_t ***pacMan, int CurrPhase)
 {
-	switch(CurrPhase)
+	switch(CurrPhase % 6)
 	{
 		case 0:		// Closed			
 			break;
 
 		case 1:		// Almost Closed
 		case 5:
-			PlaceBox(pacMan, 16, 7, 18, 11, BLACK);
-			PlaceBox(pacMan, 11, 8, 15, 10, BLACK);
-			PlaceBox(pacMan, 9, 9, 10, 9, BLACK);		
+			PlaceBox(pacMan, 16, 7, 18, 11, TRANSPARENT);
+			PlaceBox(pacMan, 11, 8, 15, 10, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 10, 9, TRANSPARENT);		
 			break;
 	
 		case 2:		// Half Open
 		case 4:
-			PlaceBox(pacMan, 12, 7, 18, 11, BLACK);
-			PlaceBox(pacMan, 16, 12, 17, 13, BLACK);
-			PlaceBox(pacMan, 16, 5, 17, 6, BLACK);
-			PlaceBox(pacMan, 15, 6, 15, 6, BLACK);
-			PlaceBox(pacMan, 15, 12, 15, 12, BLACK);
-			PlaceBox(pacMan, 9, 9, 10, 9, BLACK);
-			PlaceBox(pacMan, 11, 8, 11, 10, BLACK);
+			PlaceBox(pacMan, 12, 7, 18, 11, TRANSPARENT);
+			PlaceBox(pacMan, 16, 12, 17, 13, TRANSPARENT);
+			PlaceBox(pacMan, 16, 5, 17, 6, TRANSPARENT);
+			PlaceBox(pacMan, 15, 6, 15, 6, TRANSPARENT);
+			PlaceBox(pacMan, 15, 12, 15, 12, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 10, 9, TRANSPARENT);
+			PlaceBox(pacMan, 11, 8, 11, 10, TRANSPARENT);
 			break;
 
 		case 3:		// Fully Open
-			PlaceBox(pacMan, 11, 7, 18, 11, BLACK);
-			PlaceBox(pacMan, 13, 12, 17, 13, BLACK);
-			PlaceBox(pacMan, 15, 14, 16, 15, BLACK);
-			PlaceBox(pacMan, 12, 12, 12, 12, BLACK);
-			PlaceBox(pacMan, 14, 14, 14, 14, BLACK);
-			PlaceBox(pacMan, 13, 5, 17, 6, BLACK);
-			PlaceBox(pacMan, 15, 3, 16, 4, BLACK);
-			PlaceBox(pacMan, 14, 4, 14, 4, BLACK);
-			PlaceBox(pacMan, 12, 6, 12, 6, BLACK);
-			PlaceBox(pacMan, 10, 8, 10, 10, BLACK);
-			PlaceBox(pacMan, 9, 9, 9, 9, BLACK);
+			PlaceBox(pacMan, 11, 7, 18, 11, TRANSPARENT);
+			PlaceBox(pacMan, 13, 12, 17, 13, TRANSPARENT);
+			PlaceBox(pacMan, 15, 14, 16, 15, TRANSPARENT);
+			PlaceBox(pacMan, 12, 12, 12, 12, TRANSPARENT);
+			PlaceBox(pacMan, 14, 14, 14, 14, TRANSPARENT);
+			PlaceBox(pacMan, 13, 5, 17, 6, TRANSPARENT);
+			PlaceBox(pacMan, 15, 3, 16, 4, TRANSPARENT);
+			PlaceBox(pacMan, 14, 4, 14, 4, TRANSPARENT);
+			PlaceBox(pacMan, 12, 6, 12, 6, TRANSPARENT);
+			PlaceBox(pacMan, 10, 8, 10, 10, TRANSPARENT);
+			PlaceBox(pacMan, 9, 9, 9, 9, TRANSPARENT);
 			break;		
 	}		
 }
+static bool CheckForLine(uint16_t **GameLinesArr, Coordinates CurrentCoordinates, Direction NewDirection){
+	switch(NewDirection){
+		case UP:
+			return GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y - 1] == WHITE;
+
+		case DOWN:
+			return GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y + 1] == WHITE;
+
+		case LEFT:
+			return GameLinesArr[CurrentCoordinates.x - 1][CurrentCoordinates.y] == WHITE;
+
+		case RIGHT:
+			return GameLinesArr[CurrentCoordinates.x + 1][CurrentCoordinates.y] == WHITE;
+		
+		default:
+			return false;
+	}
+}
+
 
 static uint16_t** CreateArray(int xSize, int ySize){
 	uint16_t **temp = malloc(sizeof(uint16_t*) * xSize);
@@ -677,3 +770,19 @@ static void PlaceSmallDot(uint16_t ***array, uint16_t x, uint16_t y){
 static void PlaceBigDot(uint16_t ***array, uint16_t x, uint16_t y){
 	PlaceBox(array, x-8, y-8, x+8, y+8, WHITE);
 }
+
+static void PlaceSpriteWithTransparency(uint16_t **Combined, uint16_t **GameBoard, uint16_t ***Sprite, Coordinates spriteCoord){
+	uint32_t x, y;
+	for(x = 0; x < 19; x++)
+		for(y = 0; y < 19; y++)
+			if((*Sprite)[x][y] == TRANSPARENT){
+				uint32_t tmpX = spriteCoord.x - 9 + x;
+				uint32_t tmpY = spriteCoord.y - 9 + y;
+
+				if(Combined[tmpX][tmpY] == WHITE)
+					PlacePixel(Sprite, x, y, Combined[tmpX][tmpY]);
+				else
+					PlacePixel(Sprite, x, y, GameBoard[tmpX][tmpY]);		
+			}		
+}
+#pragma endregion
