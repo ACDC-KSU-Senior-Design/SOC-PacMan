@@ -117,11 +117,7 @@ int main(int argc,char ** argv) {
 
 	InitGameBoard(virtual_base);
 
-	Circle currCircle = {240,240,25};
-	Circle prevCircle = currCircle;
-	
-	Line currLine = {currCircle.X, currCircle.Y, 240,240};
-	Line prevLine = currLine;
+	Direction currDirection;
 	
 	while(bSuccess && (max_cnt == 0 || cnt < max_cnt)){
         if (ADXL345_IsDataReady(file)){
@@ -131,42 +127,25 @@ int main(int argc,char ** argv) {
 				  
 				int16_t xg = szXYZ[0] * mg_per_digi;
 				int16_t yg = szXYZ[1] * mg_per_digi;
-				int16_t zg = szXYZ[2] * mg_per_digi;
-                //printf("[%d]X=%d mg, Y=%d mg, Z=%d mg\r\n", cnt, xg, yg, zg);
-                // show raw data, 
+                //printf("[%d]X=%d mg, Y=%d mg\r\n", cnt, xg, yg);
 
-				//Calculate the next position depending on the sensors
-				currCircle.X += xg / 100;	//X axis is good so just add the value
-				currCircle.Y -= yg / 100;	//Y axis is inverted so invert the answer
 
-				currLine.X1 = currCircle.X;
-				currLine.Y1 = currCircle.Y;
-				//End calculate position from sensors
-				
-				//Prevent the circle from going out of bounds
-				if(currCircle.X < currCircle.R)
-					currCircle.X = currCircle.R;
-				else if(currCircle.X > SCREEN_WIDTH - currCircle.R)
-					currCircle.X = SCREEN_WIDTH - currCircle.R;
-				
-				if(currCircle.Y < currCircle.R)
-					currCircle.Y = currCircle.R;
-				else if(currCircle.Y > SCREEN_HEIGHT - currCircle.R)
-					currCircle.Y = SCREEN_HEIGHT - currCircle.R;
-				//End prevent circle from out of bounds
+				if(xg > 100)
+					currDirection = RIGHT;
+				else if(xg < -100)
+					currDirection = LEFT;
+				else if(yg < -100)
+					currDirection = DOWN;
+				else if(yg > 100)
+					currDirection = UP;
 
-				if(currCircle.X != prevCircle.X || currCircle.Y != prevCircle.Y){
-					VGA_circle(prevCircle.X, prevCircle.Y, prevCircle.R, BLACK, virtual_base);
-					VGA_line(prevLine.X1, prevLine.Y1, prevLine.X2, prevLine.Y2, BLACK, virtual_base);
-					
-					VGA_circle(currCircle.X,  currCircle.Y,  currCircle.R,  LIGHT_BLUE, virtual_base);
-					VGA_line(currLine.X1, currLine.Y1, currLine.X2, currLine.Y2, LIGHT_BLUE, virtual_base);
-					
-					
-					prevCircle = currCircle;
-					prevLine = currLine;
-				}
+				//printf("Direction: %s\n", currDirection == RIGHT ? "Right" :
+				//					    currDirection == LEFT  ? "Left"  :
+				//						currDirection == DOWN  ? "DOWN"  :
+				//						"UP"   );
 				
+				MovePacman(currDirection, virtual_base);
+
                 usleep(1000*33);// 1/30 * 1000 = 30FPS
             }
         }
