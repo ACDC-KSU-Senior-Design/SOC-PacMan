@@ -146,7 +146,7 @@ int main(int argc,char ** argv) {
 				
 				MovePacman(currDirection, virtual_base);
 
-                usleep(1000*33);// 1/30 * 1000 = 30FPS
+                usleep(1000*10);// 1/30 * 1000 = 30FPS
             }
         }
     }
