@@ -7,7 +7,9 @@
 #define MIN(a,b) (a > b ? b : a)
 
 #define PacMan_Color 0xFD
-
+#define GhostOne_Color DARK_RED
+#define GhostTwo_Color 0xF0 
+#define GhostThree_Color 0x87 // Dark Purple
 typedef struct{
     uint16_t x;
     uint16_t y;
@@ -18,11 +20,21 @@ typedef struct{
 static uint16_t **GameLines;
 static uint16_t **GameBoard;
 static uint16_t **PacMan;
+static uint16_t **GhostOne;
+static uint16_t **GhostTwo;
+static uint16_t **GhostThree;
 static uint16_t **Combined;
 static uint16_t **Dots;
 
 static Coordinates PacMan_Old = {320,355};
 static Direction PacMan_OldDir;
+
+
+static Coordinates GhostOne_Old = {298,219};
+static Coordinates GhostTwo_Old = {320,219}; // Middle 
+static Coordinates GhostThree_Old = {342,219};  
+
+
 
 // Pacman Variables
 static Direction PrevDirection;
@@ -41,6 +53,7 @@ static void PlaceBigDot(uint16_t ***combined, uint16_t ***dots, uint16_t x, uint
 static void PlaceSpriteWithTransparency(uint16_t **Combined, uint16_t **GameBoard, uint16_t ***Sprite, Coordinates spriteCoord);
 
 static void InitializePacMan(uint16_t ***pacMan);
+static void InitializeGhost(uint16_t ***ghost, short color);
 static void Move_Pacman(uint16_t ***pacMan, int xCenter, int yCenter, Direction NewDirection, Direction PrevDirection, void *virtual_base);
 static void PacManBufferTooUp(uint16_t ***pacMan, int CurrPhase);
 static void PacManBufferTooLeft(uint16_t ***pacMan, int CurrPhase);
@@ -49,6 +62,9 @@ static void PacManBufferTooDown(uint16_t ***pacMan, int CurrPhase);
 static void ResetPacmanBuffer(uint16_t ***pacMan);
 static bool CheckForLine(uint16_t **GameLinesArr, Coordinates PmCoordinates, Direction NewDirection);
 static void IncrementScore();
+static void MoveGhost(uint16_t ***ghost, Coordinates* Ghost_Old, Direction NewDirection, Direction* OldDirection, int AnimationPhase, short ghostColor, void *virtual_base);
+static void GhostBufferToPhaseOne(uint16_t ***ghost, short color);
+static void GhostBufferToPhaseTwo(uint16_t ***ghost, short color);
 
 #pragma endregion
 
@@ -57,6 +73,9 @@ void InitGameBoard(void *virtual_base){
 	uint16_t pixel_color = LIGHT_BLUE;
 
 	PacMan = CreateArray(19, 19);
+	GhostOne = CreateArray(19, 19);
+	GhostTwo = CreateArray(19, 19);
+	GhostThree = CreateArray(19, 19);
     GameBoard = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
 	Combined = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
 	GameLines = CreateArray(SCREEN_WIDTH, SCREEN_HEIGHT);
@@ -136,6 +155,9 @@ void InitGameBoard(void *virtual_base){
 
 	#pragma region InitPacMan
 		InitializePacMan(&PacMan);
+		InitializeGhost(&GhostOne, GhostOne_Color);
+		InitializeGhost(&GhostTwo, GhostTwo_Color);
+		InitializeGhost(&GhostThree, GhostThree_Color);
 	#pragma endregion
 
 	#pragma region InitDots
@@ -360,8 +382,8 @@ void InitGameBoard(void *virtual_base){
 	PlaceBox(&GameLines, 252, 264, 387, 264, WHITE);
 	PlaceBox(&GameLines, 387, 219, 557, 219, WHITE);
 	PlaceBox(&GameLines, 252, 219, 82 , 219, WHITE);
-	PlaceBox(&GameLines, 320, 176, 320, 219, DARK_RED);
-	PlaceBox(&GameLines, 342, 219, 297, 219, DARK_RED);
+	PlaceBox(&GameLines, 320, 176, 320, 219, WHITE);
+	PlaceBox(&GameLines, 342, 219, 297, 219, WHITE);
 	#pragma endregion
 
 	#pragma region InitLogo
@@ -370,7 +392,12 @@ void InitGameBoard(void *virtual_base){
 
 	//Dark Blue 0xce43
 	ResetPacmanBuffer(&PacMan);
-	PlacePacMan(&Combined, GameBoard, PacMan, PacMan_Old, PacMan_Old);
+	PlacePacMan(&Combined, GameBoard, GhostOne, GhostOne_Old, GhostOne_Old );
+	PlacePacMan(&Combined, GameBoard, GhostTwo, GhostTwo_Old, GhostTwo_Old );
+	PlacePacMan(&Combined, GameBoard, GhostThree, GhostThree_Old, GhostThree_Old );
+	
+	//PlacePacMan(&Combined, GameBoard, PacMan, PacMan_Old, PacMan_Old);
+
 	VGA_draw_buffer(Combined, virtual_base);
 	//VGA_draw_buffer_NoColor(GameLines, BLACK, virtual_base);
 }
@@ -441,6 +468,54 @@ bool MovePacman(Direction NewDirection, void *virtual_base){	//Return bool could
 	PacMan_OldDir = NewDirection;
 	return true;
 }
+static void MoveGhost(uint16_t ***ghost, Coordinates* Ghost_Old, Direction NewDirection, Direction* OldDirection, int AnimationPhase, short ghostColor, void *virtual_base){	//Return bool could be to tell if pacman is moving or stuck on a wall
+	
+	if(AnimationPhase == 1)
+		GhostBufferToPhaseOne(ghost, ghostColor);
+	else GhostBufferToPhaseTwo(ghost, ghostColor);
+
+	Coordinates Ghost_New = *Ghost_Old;
+
+	int someConstValue = 1;
+
+	if(NewDirection != *OldDirection && !CheckForLine(GameLines, *Ghost_Old, NewDirection)) // if pacman changed directions and there is not a intersection
+		NewDirection = *OldDirection;
+
+	int x = Ghost_Old->x;
+	int y = Ghost_Old->y;
+
+
+	switch(NewDirection){
+		case UP:
+			if(CheckForLine(GameLines, *Ghost_Old, UP))
+				Ghost_New.y -= someConstValue;	
+			break;
+
+		case DOWN:
+			if(CheckForLine(GameLines, *Ghost_Old, DOWN))
+				Ghost_New.y += someConstValue;
+		break;
+
+		case LEFT:
+			if(CheckForLine(GameLines, *Ghost_Old, LEFT))
+				Ghost_New.x -= someConstValue;
+		break;
+
+		case RIGHT:
+			if(CheckForLine(GameLines, *Ghost_Old, RIGHT))
+				Ghost_New.x += someConstValue;
+		break;
+	}
+	
+	
+	PlaceSpriteWithTransparency(Combined, GameBoard, ghost, Ghost_New);
+	PlacePacMan(&Combined, GameBoard, ghost, *Ghost_Old, Ghost_New);
+	VGA_draw_buffer_Section(Combined, Ghost_Old->x - 10, Ghost_Old->y - 10, Ghost_Old->x + 10, Ghost_Old->y + 11, virtual_base);
+	*Ghost_Old = Ghost_New;
+	*OldDirection = NewDirection;
+	return true;
+}
+
 
 void FreeGameBoard(){
 	free(GameBoard);
@@ -489,28 +564,85 @@ static void InitializePacMan(uint16_t ***pacMan)
 	PlaceBox(pacMan, 13, 18, 18, 18, TRANSPARENT);
 
 }
-
-static void Move_Pacman(uint16_t ***pacMan, int xCenter, int yCenter, Direction NewDirection, Direction PrevDirection, void *virtual_base)
+static void InitializeGhost(uint16_t ***ghost, short color)
 {
+	PlaceBox(ghost, 1, 1, 17, 17, color);
+	PlaceBox(ghost, 0, 0, 18, 0, TRANSPARENT); // Extra border -> Ghost is one pixel less on each side
+	PlaceBox(ghost, 0, 0, 0, 18, TRANSPARENT);
+	PlaceBox(ghost, 0, 18, 18, 18, TRANSPARENT);
+	PlaceBox(ghost, 18, 0, 18, 18, TRANSPARENT);
 
-	switch(NewDirection)
-	{
-		case UP:
-		//Move_PacmanUp();
-		break;
+	// Top left corner
+	PlaceBox(ghost, 1, 1, 3, 2, TRANSPARENT);
+	PlaceBox(ghost, 2, 3, 2, 3, TRANSPARENT);
+	PlaceBox(ghost, 1, 3, 1, 7, TRANSPARENT);
+	PlaceBox(ghost, 4, 1, 6, 1, TRANSPARENT);
 
-		case DOWN:
-		//Move_PacmanDown();
-		break;
+	// Top Right corner
+	PlaceBox(ghost, 15, 1, 17, 2, TRANSPARENT);
+	PlaceBox(ghost, 16, 3, 17, 4, TRANSPARENT);
+	PlaceBox(ghost, 17, 5, 17, 7, TRANSPARENT);
+	PlaceBox(ghost, 12, 1, 14, 1, TRANSPARENT);
 
-		case LEFT:
-		//Move_PacmanLeft();
-		break;
+	// Left Leg hole 
+	PlaceBox(ghost, 2, 17, 5, 17, TRANSPARENT);
+	PlaceBox(ghost, 3, 16, 4, 16, TRANSPARENT);
 
-		case RIGHT:
-		//Move_PacmanRight();
-		break;
-	}
+	// Right Leg Hole
+	PlaceBox(ghost, 14, 16, 15, 16, TRANSPARENT);
+	PlaceBox(ghost, 13, 17, 16, 17, TRANSPARENT);
+
+	// Center Leg Hole
+	PlaceBox(ghost, 8, 16, 10, 17, TRANSPARENT);
+
+	// Left Eye
+	PlaceBox(ghost, 5, 4, 6, 5, WHITE);
+	PlaceBox(ghost, 4, 5, 4, 7, WHITE);
+	PlaceBox(ghost, 7, 5, 7, 7, WHITE);
+	PlaceBox(ghost, 5, 8, 6, 8, WHITE);
+	PlaceBox(ghost, 5, 6, 6, 7, LIGHT_BLUE);
+
+	// Right Eye
+	PlaceBox(ghost, 12, 4, 13, 5, WHITE);
+	PlaceBox(ghost, 11, 5, 11, 7, WHITE);
+	PlaceBox(ghost, 14, 5, 14, 7, WHITE);
+	PlaceBox(ghost, 12, 8, 13, 8, WHITE);
+	PlaceBox(ghost, 12, 6, 13, 7, LIGHT_BLUE);
+
+}
+static void GhostBufferToPhaseOne(uint16_t ***ghost, short color)
+{
+	PlaceBox(ghost, 1, 16, 17, 17, color); // Reset bottom to red
+	// Left Leg hole 
+	PlaceBox(ghost, 2, 17, 5, 17, TRANSPARENT);
+	PlaceBox(ghost, 3, 16, 4, 16, TRANSPARENT);
+
+	// Right Leg Hole
+	PlaceBox(ghost, 14, 16, 15, 16, TRANSPARENT);
+	PlaceBox(ghost, 13, 17, 16, 17, TRANSPARENT);
+
+	// Center Leg Hole
+	PlaceBox(ghost, 8, 16, 10, 17, TRANSPARENT);	
+}
+static void GhostBufferToPhaseTwo(uint16_t ***ghost, short color)
+{
+	PlaceBox(ghost, 1, 16, 17, 17, color); // Reset bottom to red
+	// Left Leg hole 
+	PlaceBox(ghost, 1, 16, 1, 17, TRANSPARENT);
+	PlaceBox(ghost, 2, 17, 2, 17, TRANSPARENT);
+
+	// left ish Leg Hole
+	PlaceBox(ghost, 6, 16, 7, 17, TRANSPARENT);
+	PlaceBox(ghost, 5, 17, 5, 17, TRANSPARENT);
+
+	// right ish Leg Hole
+	PlaceBox(ghost, 11, 16, 12, 17, TRANSPARENT);
+	PlaceBox(ghost, 13, 17, 13, 17, TRANSPARENT);
+	
+
+	// right  Leg Hole
+	PlaceBox(ghost, 17, 16, 17, 17, TRANSPARENT);
+	PlaceBox(ghost, 16, 17, 16, 17, TRANSPARENT);
 }
 
 static void ResetPacmanBuffer(uint16_t ***pacMan)
@@ -778,6 +910,7 @@ static void PlacePacMan(uint16_t ***array, uint16_t **gameboard, uint16_t ** pac
 		for(y = new.y-9; y < new.y+10; y++)
 			PlacePixel(array, x, y, pacman[x - new.x+9][y - new.y+9]);
 }
+
 
 static void PlaceSmallDot(uint16_t ***combined, uint16_t ***dots, uint16_t x, uint16_t y){
 	PlaceBox(combined, x-2, y-2, x+2, y+2, WHITE);
