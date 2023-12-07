@@ -143,8 +143,12 @@ int main(int argc,char ** argv) {
 				//					    currDirection == LEFT  ? "Left"  :
 				//						currDirection == DOWN  ? "DOWN"  :
 				//						"UP"   );
+				if(!isGameOver())
+				{
+					MovePacman(currDirection, virtual_base);
+				}
+
 				
-				MovePacman(currDirection, virtual_base);
 
                 usleep(1000*10);// 1/30 * 1000 = 30FPS
             }
