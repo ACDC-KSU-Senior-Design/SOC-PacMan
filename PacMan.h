@@ -15,6 +15,7 @@ typedef enum
 
 
 void InitGameBoard(void *virtual_base);
+bool isGameOver();
 bool MovePacman(Direction NewDirection, void *virtual_base);
 void FreeGameBoard();
  

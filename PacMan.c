@@ -41,10 +41,13 @@ static int GhostThree_AnimationPhase = 2;
 static Coordinates GhostOne_Old = {298,219};
 static Coordinates GhostTwo_Old = {320,219}; // Middle 
 static Coordinates GhostThree_Old = {342,219}; 
+static Coordinates GhostExited	= {320, 175}; //Coordinates of when the ghost has left the startup position
 
 static bool GhostOneStartUp = false; 
 static bool GhostTwoStartUp = false; 
 static bool GhostThreeStartUp = false; 
+
+static bool GhostTwoContinue = false;
 
 static bool GameLost = false;
 
@@ -73,7 +76,7 @@ static void PacManBufferTooLeft(uint16_t ***pacMan, int CurrPhase);
 static void PacManBufferTooRight(uint16_t ***pacMan, int CurrPhase);
 static void PacManBufferTooDown(uint16_t ***pacMan, int CurrPhase);
 static void ResetPacmanBuffer(uint16_t ***pacMan);
-static bool CheckForLine(uint16_t **GameLinesArr, Coordinates PmCoordinates, Direction NewDirection);
+static bool CheckForLine(uint16_t **GameLinesArr, Coordinates PmCoordinates, Direction NewDirection, bool canUseRed);
 static void IncrementScore();
 static void MoveGhost(uint16_t ***ghost, Coordinates* Ghost_Old, Direction NewDirection, Direction* OldDirection, int* AnimationPhase, short ghostColor, void *virtual_base);
 static void GhostBufferToPhaseOne(uint16_t ***ghost, short color);
@@ -397,8 +400,8 @@ void InitGameBoard(void *virtual_base){
 	PlaceBox(&GameLines, 252, 264, 387, 264, WHITE);
 	PlaceBox(&GameLines, 387, 219, 557, 219, WHITE);
 	PlaceBox(&GameLines, 252, 219, 82 , 219, WHITE);
-	PlaceBox(&GameLines, 320, 176, 320, 219, WHITE);
-	PlaceBox(&GameLines, 342, 219, 297, 219, WHITE);
+	PlaceBox(&GameLines, 320, 176, 320, 219, DARK_RED);
+	PlaceBox(&GameLines, 342, 219, 297, 219, DARK_RED);
 	#pragma endregion
 
 	#pragma region InitLogo
@@ -435,10 +438,10 @@ bool MovePacman(Direction NewDirection, void *virtual_base){	//Return bool could
 	
 	int someConstValue = 1;
 
-	if(NewDirection != PacMan_OldDir && !CheckForLine(GameLines, PacMan_Old, NewDirection)) // if pacman changed directions and there is not a intersection
+	if(NewDirection != PacMan_OldDir && !CheckForLine(GameLines, PacMan_Old, NewDirection, false)) // if pacman changed directions and there is not a intersection
 		NewDirection = PacMan_OldDir;
 
-		//printf("X: %d, Y: %d, Line: %d\n",PacMan_New.x, PacMan_New.y, CheckForLine(GameLines, PacMan_Old, NewDirection));
+		//printf("X: %d, Y: %d, Line: %d\n",PacMan_New.x, PacMan_New.y, CheckForLine(GameLines, PacMan_Old, NewDirection, false));
 		int x = PacMan_Old.x;
 		int y = PacMan_Old.y;
 		//printf("\n%d %d %d\n%d %d %d\t%s\n%d %d %d\n", GameLines[x-1][y-1] > 1 ? 1 : 0, GameLines[x+0][y-1] > 1 ? 1 : 0, GameLines[x+1][y-1] > 1 ? 1 : 0,
@@ -447,33 +450,33 @@ bool MovePacman(Direction NewDirection, void *virtual_base){	//Return bool could
 
 	switch(NewDirection){
 		case UP:
-			if(CheckForLine(GameLines, PacMan_Old, UP)){ // if there is a line in that direction
+			if(CheckForLine(GameLines, PacMan_Old, UP, false)){ // if there is a line in that direction
 				PacManBufferTooUp(&PacMan, AnimationPhase);
 				PacMan_New.y -= someConstValue;								//move it in that direction
 			}
-			else PacManBufferTooUp(&PacMan, AnimationPhase);
+			//else PacManBufferTooUp(&PacMan, AnimationPhase);
 				//Would need a else if our constMoveValue is not 1 since it wouldnt let it hit a corner 
 		break;
 
 		case DOWN:
-			if(CheckForLine(GameLines, PacMan_Old, DOWN)){
+			if(CheckForLine(GameLines, PacMan_Old, DOWN, false)){
 				PacManBufferTooDown(&PacMan, AnimationPhase);
 				PacMan_New.y += someConstValue;
-			}else PacManBufferTooDown(&PacMan, AnimationPhase);
+			}//else PacManBufferTooDown(&PacMan, AnimationPhase);
 		break;
 
 		case LEFT:
-			if(CheckForLine(GameLines, PacMan_Old, LEFT)){
+			if(CheckForLine(GameLines, PacMan_Old, LEFT, false)){
 				PacManBufferTooLeft(&PacMan, AnimationPhase);
 				PacMan_New.x -= someConstValue;
-			}else PacManBufferTooLeft(&PacMan, AnimationPhase);
+			}//else PacManBufferTooLeft(&PacMan, AnimationPhase);
 		break;
 
 		case RIGHT:
-			if(CheckForLine(GameLines, PacMan_Old, RIGHT)){
+			if(CheckForLine(GameLines, PacMan_Old, RIGHT, false)){
 				PacManBufferTooRight(&PacMan, AnimationPhase);
 				PacMan_New.x += someConstValue;
-			}else PacManBufferTooRight(&PacMan, AnimationPhase);
+			}//else PacManBufferTooRight(&PacMan, AnimationPhase);
 		break;
 	}
 	
@@ -483,11 +486,7 @@ bool MovePacman(Direction NewDirection, void *virtual_base){	//Return bool could
 	VGA_draw_buffer_Section(Combined, PacMan_Old.x - 10, PacMan_Old.y - 10, PacMan_New.x + 10, PacMan_New.y + 11, virtual_base);
 	PacMan_Old = PacMan_New;
 	PacMan_OldDir = NewDirection;
-	if(GhostTwoStartUp == false)
-	{
-		MoveGhost(&GhostTwo, &GhostTwo_Old, NewDirection, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);	
-		printf("shit");
-	}
+
 	MoveGhost(&GhostThree, &GhostThree_Old, NewDirection, &GhostThree_OldDir, &GhostThree_AnimationPhase, GhostThree_Color, virtual_base);
 	MoveGhost(&GhostOne, &GhostOne_Old, NewDirection, &GhostOne_OldDir, &GhostOne_AnimationPhase, GhostOne_Color, virtual_base);
 
@@ -496,7 +495,7 @@ bool MovePacman(Direction NewDirection, void *virtual_base){	//Return bool could
 	return true;
 }
 static void MoveGhost(uint16_t ***ghost, Coordinates* Ghost_Old, Direction NewDirection, Direction* OldDirection, int* AnimationPhase, short ghostColor, void *virtual_base){	//Return bool could be to tell if pacman is moving or stuck on a wall
-	printf("X: %d, Y: %d\n", Ghost_Old->x, Ghost_Old->y);
+	//printf("X: %d, Y: %d\n", Ghost_Old->x, Ghost_Old->y);
 	if(*AnimationPhase == 1){
 		GhostBufferToPhaseOne(ghost, ghostColor);
 		*AnimationPhase = 2;
@@ -510,31 +509,27 @@ static void MoveGhost(uint16_t ***ghost, Coordinates* Ghost_Old, Direction NewDi
 
 	int someConstValue = 1;
 
-	if(NewDirection != *OldDirection && !CheckForLine(GameLines, *Ghost_Old, NewDirection)) // if pacman changed directions and there is not a intersection
-		NewDirection = *OldDirection;
-
 	int x = Ghost_Old->x;
 	int y = Ghost_Old->y;
 
-
 	switch(NewDirection){
 		case UP:
-			if(CheckForLine(GameLines, *Ghost_Old, UP))
+			if(CheckForLine(GameLines, *Ghost_Old, UP, true))
 				Ghost_New.y -= someConstValue;	
 			break;
 
 		case DOWN:
-			if(CheckForLine(GameLines, *Ghost_Old, DOWN))
+			if(CheckForLine(GameLines, *Ghost_Old, DOWN, true))
 				Ghost_New.y += someConstValue;
 		break;
 
 		case LEFT:
-			if(CheckForLine(GameLines, *Ghost_Old, LEFT))
+			if(CheckForLine(GameLines, *Ghost_Old, LEFT, true))
 				Ghost_New.x -= someConstValue;
 		break;
 
 		case RIGHT:
-			if(CheckForLine(GameLines, *Ghost_Old, RIGHT))
+			if(CheckForLine(GameLines, *Ghost_Old, RIGHT, true))
 				Ghost_New.x += someConstValue;
 		break;
 	}
@@ -557,31 +552,77 @@ bool isGameOver()
 
 static void GhostTwoAI(void *virtual_base)
 {
+	//printf("X: %d, Y: %d, Started: %d\n", GhostTwo_Old.x, GhostTwo_Old.y, GhostTwoStartUp);
+	//printf("y1: %d, y2: %d, Equal: %d\n", GhostTwo_Old.y, GhostExited.y, GhostTwo_Old.y == GhostExited.y);
 
-
-	if(GhostTwo_Old.x == 320 && GhostTwo_Old.y == 175)
-	{
+	if(!GhostTwoStartUp && GhostTwo_Old.y == GhostExited.y){
 		GhostTwoStartUp = true;
+		MoveGhost(&GhostTwo, &GhostTwo_Old, RIGHT, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);	
 	}
+	else if(!GhostTwoStartUp)
+		MoveGhost(&GhostTwo, &GhostTwo_Old, UP, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);	
 
-	if(GhostTwoStartUp == true)
+	else if(GhostTwoStartUp)
 	{
-		if(CheckForLine(GameLines, GhostTwo_Old, UP) && PacMan_Old.y < GhostTwo_Old.y)
-		{
-			MoveGhost(&GhostTwo, &GhostTwo_Old, UP, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);
-		}
-		else if(CheckForLine(GameLines, GhostTwo_Old, DOWN) && PacMan_Old.y > GhostTwo_Old.y)
-		{
-			MoveGhost(&GhostTwo, &GhostTwo_Old, DOWN, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);
-		}
-		else if(CheckForLine(GameLines, GhostTwo_Old, LEFT) && PacMan_Old.x < GhostTwo_Old.x)
-		{
-			MoveGhost(&GhostTwo, &GhostTwo_Old, LEFT, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);
-		}
-		else if(CheckForLine(GameLines, GhostTwo_Old, RIGHT) && PacMan_Old.x > GhostTwo_Old.x)
-		{
-			MoveGhost(&GhostTwo, &GhostTwo_Old, RIGHT, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);
-		}
+		Direction nextMoveDirection = GhostTwo_OldDir;
+		int xDistance = GhostTwo_Old.x - PacMan_Old.x;
+		int yDistance = GhostTwo_Old.y - PacMan_Old.y;
+		int distanceBetweenGhostAndPacMan = sqrt(xDistance * xDistance + yDistance * yDistance);
+
+		//printf("Direction: %s LineAvail: %s", GhostTwo_OldDir == UP ? "UP" : GhostTwo_OldDir == DOWN ? "DOWN" : GhostTwo_OldDir == RIGHT ? "RIGHT": "LEFT", CheckForLine(GameLines, GhostTwo_Old, GhostTwo_OldDir, false) ? "True" : "False");
+		printf("Px: %d Gx: %d Py: %d Gy: %d Direction: %s \n", PacMan_Old.x, GhostTwo_Old.x, PacMan_Old.y, GhostTwo_Old.y, GhostTwo_OldDir == UP ? "UP" : GhostTwo_OldDir == DOWN ? "DOWN" : GhostTwo_OldDir == RIGHT ? "RIGHT": "LEFT");
+		//If ghost is far enough away and can continue in the same direction
+		// if(distanceBetweenGhostAndPacMan > 25)// && CheckForLine(GameLines, GhostTwo_Old, GhostTwo_OldDir, false))
+			//MoveGhost(&GhostTwo, &GhostTwo_Old, GhostTwo_OldDir, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);	//Move the ghost in the same direction
+
+			if(!CheckForLine(GameLines, GhostTwo_Old, LEFT, false) && GhostTwo_OldDir == LEFT){					//if ghost cant move left & its trying to move that way
+				if(CheckForLine(GameLines, GhostTwo_Old, UP, false))		  	//if pacman is above and you can go up
+					nextMoveDirection = UP;																		 
+				else if(CheckForLine(GameLines, GhostTwo_Old, DOWN, false))  	//If pacman is below & its you can go down
+					nextMoveDirection = DOWN;			
+				else if(CheckForLine(GameLines, GhostTwo_Old, RIGHT, false)) 	//if pacman is to the right and you can go right
+					nextMoveDirection = RIGHT;
+			}
+			else if(!CheckForLine(GameLines, GhostTwo_Old, RIGHT, false) && GhostTwo_OldDir == RIGHT){
+				if(CheckForLine(GameLines, GhostTwo_Old, UP, false))		  	//if pacman is above and you can go up
+					nextMoveDirection = UP;																		 
+				else if(CheckForLine(GameLines, GhostTwo_Old, DOWN, false))  	//If pacman is below & its you can go down
+					nextMoveDirection = DOWN;		
+				else if(CheckForLine(GameLines, GhostTwo_Old, LEFT, false)) 	//if pacman is to the right and you can go right
+					nextMoveDirection = LEFT;	
+			}
+			else if(!CheckForLine(GameLines, GhostTwo_Old, UP, false) && GhostTwo_OldDir == UP){
+				if(CheckForLine(GameLines, GhostTwo_Old, RIGHT, false)) 		//if pacman is to the right and you can go right
+					nextMoveDirection = RIGHT;
+				else if(CheckForLine(GameLines, GhostTwo_Old, LEFT, false)) 	//if pacman is to the right and you can go right
+					nextMoveDirection = LEFT;	
+				else if(CheckForLine(GameLines, GhostTwo_Old, DOWN, false))  	//If pacman is below & its you can go down
+					nextMoveDirection = DOWN;
+			}
+			else if(!CheckForLine(GameLines, GhostTwo_Old, DOWN, false) && GhostTwo_OldDir == DOWN){
+				if(CheckForLine(GameLines, GhostTwo_Old, RIGHT, false)) 		//if pacman is to the right and you can go right
+					nextMoveDirection = RIGHT;
+				else if(CheckForLine(GameLines, GhostTwo_Old, LEFT, false)) 	//if pacman is to the right and you can go right
+					nextMoveDirection = LEFT;	
+				else if(CheckForLine(GameLines, GhostTwo_Old, UP, false))		//if pacman is above and you can go up
+					nextMoveDirection = UP;	
+			}
+			else if(GhostTwo_OldDir == UP || GhostTwo_OldDir == DOWN){
+				if(PacMan_Old.x < GhostTwo_Old.x && CheckForLine(GameLines, GhostTwo_Old, LEFT, false))										//If Packman is to the left & can turn left
+					nextMoveDirection = LEFT;
+				else if(PacMan_Old.x > GhostTwo_Old.x && CheckForLine(GameLines, GhostTwo_Old, RIGHT, false)) 								//else If PacMan is to the right & can turn right
+					nextMoveDirection = RIGHT;
+			} 
+			else if (GhostTwo_OldDir == LEFT || GhostTwo_OldDir == RIGHT){
+				if(PacMan_Old.y < GhostTwo_Old.y && CheckForLine(GameLines, GhostTwo_Old, UP, false))										//If Packman is above & can turn up
+					nextMoveDirection = UP;
+				else if(PacMan_Old.y > GhostTwo_Old.y && CheckForLine(GameLines, GhostTwo_Old, DOWN, false)) 								//else If PacMan below & can down right
+					nextMoveDirection = DOWN;
+			}
+
+			//printf(" New Direction: %s\n", nextMoveDirection == UP ? "UP" : nextMoveDirection == DOWN ? "DOWN" : nextMoveDirection == RIGHT ? "RIGHT": "LEFT" );
+
+			MoveGhost(&GhostTwo, &GhostTwo_Old, nextMoveDirection, &GhostTwo_OldDir, &GhostTwo_AnimationPhase, GhostTwo_Color, virtual_base);	//Continue in that direction		
 	}
 }
 
@@ -636,33 +677,33 @@ static void InitializePacMan(uint16_t ***pacMan)
 static void InitializeGhost(uint16_t ***ghost, short color)
 {
 	PlaceBox(ghost, 1, 1, 17, 17, color);
-	PlaceBox(ghost, 0, 0, 18, 0, BLACK); // Extra border -> Ghost is one pixel less on each side
-	PlaceBox(ghost, 0, 0, 0, 18, BLACK);
-	PlaceBox(ghost, 0, 18, 18, 18, BLACK);
-	PlaceBox(ghost, 18, 0, 18, 18, BLACK);
+	PlaceBox(ghost, 0, 0, 18, 0, TRANSPARENT); // Extra border -> Ghost is one pixel less on each side
+	PlaceBox(ghost, 0, 0, 0, 18, TRANSPARENT);
+	PlaceBox(ghost, 0, 18, 18, 18, TRANSPARENT);
+	PlaceBox(ghost, 18, 0, 18, 18, TRANSPARENT);
 
 	// Top left corner
-	PlaceBox(ghost, 1, 1, 3, 2, BLACK);
-	PlaceBox(ghost, 2, 3, 2, 3, BLACK);
-	PlaceBox(ghost, 1, 3, 1, 7, BLACK);
-	PlaceBox(ghost, 4, 1, 6, 1, BLACK);
+	PlaceBox(ghost, 1, 1, 3, 2, TRANSPARENT);
+	PlaceBox(ghost, 2, 3, 2, 3, TRANSPARENT);
+	PlaceBox(ghost, 1, 3, 1, 7, TRANSPARENT);
+	PlaceBox(ghost, 4, 1, 6, 1, TRANSPARENT);
 
 	// Top Right corner
-	PlaceBox(ghost, 15, 1, 17, 2, BLACK);
-	PlaceBox(ghost, 16, 3, 17, 4, BLACK);
-	PlaceBox(ghost, 17, 5, 17, 7, BLACK);
-	PlaceBox(ghost, 12, 1, 14, 1, BLACK);
+	PlaceBox(ghost, 15, 1, 17, 2, TRANSPARENT);
+	PlaceBox(ghost, 16, 3, 17, 4, TRANSPARENT);
+	PlaceBox(ghost, 17, 5, 17, 7, TRANSPARENT);
+	PlaceBox(ghost, 12, 1, 14, 1, TRANSPARENT);
 
 	// Left Leg hole 
-	PlaceBox(ghost, 2, 17, 5, 17, BLACK);
-	PlaceBox(ghost, 3, 16, 4, 16, BLACK);
+	PlaceBox(ghost, 2, 17, 5, 17, TRANSPARENT);
+	PlaceBox(ghost, 3, 16, 4, 16, TRANSPARENT);
 
 	// Right Leg Hole
-	PlaceBox(ghost, 14, 16, 15, 16, BLACK);
-	PlaceBox(ghost, 13, 17, 16, 17, BLACK);
+	PlaceBox(ghost, 14, 16, 15, 16, TRANSPARENT);
+	PlaceBox(ghost, 13, 17, 16, 17, TRANSPARENT);
 
 	// Center Leg Hole
-	PlaceBox(ghost, 8, 16, 10, 17, BLACK);
+	PlaceBox(ghost, 8, 16, 10, 17, TRANSPARENT);
 
 	// Left Eye
 	PlaceBox(ghost, 5, 4, 6, 5, WHITE);
@@ -683,35 +724,35 @@ static void GhostBufferToPhaseOne(uint16_t ***ghost, short color)
 {
 	PlaceBox(ghost, 1, 16, 17, 17, color); // Reset bottom to red
 	// Left Leg hole 
-	PlaceBox(ghost, 2, 17, 5, 17, BLACK);
-	PlaceBox(ghost, 3, 16, 4, 16, BLACK);
+	PlaceBox(ghost, 2, 17, 5, 17, TRANSPARENT);
+	PlaceBox(ghost, 3, 16, 4, 16, TRANSPARENT);
 
 	// Right Leg Hole
-	PlaceBox(ghost, 14, 16, 15, 16, BLACK);
-	PlaceBox(ghost, 13, 17, 16, 17, BLACK);
+	PlaceBox(ghost, 14, 16, 15, 16, TRANSPARENT);
+	PlaceBox(ghost, 13, 17, 16, 17, TRANSPARENT);
 
 	// Center Leg Hole
-	PlaceBox(ghost, 8, 16, 10, 17, BLACK);	
+	PlaceBox(ghost, 8, 16, 10, 17, TRANSPARENT);	
 }
 static void GhostBufferToPhaseTwo(uint16_t ***ghost, short color)
 {
 	PlaceBox(ghost, 1, 16, 17, 17, color); // Reset bottom to red
 	// Left Leg hole 
-	PlaceBox(ghost, 1, 16, 1, 17, BLACK);
-	PlaceBox(ghost, 2, 17, 2, 17, BLACK);
+	PlaceBox(ghost, 1, 16, 1, 17, TRANSPARENT);
+	PlaceBox(ghost, 2, 17, 2, 17, TRANSPARENT);
 
 	// left ish Leg Hole
-	PlaceBox(ghost, 6, 16, 7, 17, BLACK);
-	PlaceBox(ghost, 5, 17, 5, 17, BLACK);
+	PlaceBox(ghost, 6, 16, 7, 17, TRANSPARENT);
+	PlaceBox(ghost, 5, 17, 5, 17, TRANSPARENT);
 
 	// right ish Leg Hole
-	PlaceBox(ghost, 11, 16, 12, 17, BLACK);
-	PlaceBox(ghost, 13, 17, 13, 17, BLACK);
+	PlaceBox(ghost, 11, 16, 12, 17, TRANSPARENT);
+	PlaceBox(ghost, 13, 17, 13, 17, TRANSPARENT);
 	
 
 	// right  Leg Hole
-	PlaceBox(ghost, 17, 16, 17, 17, BLACK);
-	PlaceBox(ghost, 16, 17, 16, 17, BLACK);
+	PlaceBox(ghost, 17, 16, 17, 17, TRANSPARENT);
+	PlaceBox(ghost, 16, 17, 16, 17, TRANSPARENT);
 }
 
 static void ResetPacmanBuffer(uint16_t ***pacMan)
@@ -894,19 +935,19 @@ static void PacManBufferTooRight(uint16_t ***pacMan, int CurrPhase)
 			break;		
 	}		
 }
-static bool CheckForLine(uint16_t **GameLinesArr, Coordinates CurrentCoordinates, Direction NewDirection){
+static bool CheckForLine(uint16_t **GameLinesArr, Coordinates CurrentCoordinates, Direction NewDirection, bool canUseRed){
 	switch(NewDirection){
 		case UP:
-			return GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y - 1] == WHITE|| (GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y - 1] == DARK_RED);
+			return GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y - 1] == WHITE || ((GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y - 1] == DARK_RED) && canUseRed);
 
 		case DOWN:
-			return (GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y + 1] == WHITE) || (GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y + 1] == DARK_RED) ;
+			return (GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y + 1] == WHITE) || ((GameLinesArr[CurrentCoordinates.x][CurrentCoordinates.y + 1] == DARK_RED) && canUseRed) ;
 
 		case LEFT:
-			return GameLinesArr[CurrentCoordinates.x - 1][CurrentCoordinates.y] == WHITE || (GameLinesArr[CurrentCoordinates.x - 1][CurrentCoordinates.y] == DARK_RED);
+			return GameLinesArr[CurrentCoordinates.x - 1][CurrentCoordinates.y] == WHITE || ((GameLinesArr[CurrentCoordinates.x - 1][CurrentCoordinates.y] == DARK_RED) && canUseRed);
 
 		case RIGHT:
-			return GameLinesArr[CurrentCoordinates.x + 1][CurrentCoordinates.y] == WHITE || (GameLinesArr[CurrentCoordinates.x + 1][CurrentCoordinates.y] == DARK_RED);
+			return GameLinesArr[CurrentCoordinates.x + 1][CurrentCoordinates.y] == WHITE || ((GameLinesArr[CurrentCoordinates.x + 1][CurrentCoordinates.y] == DARK_RED) && canUseRed);
 		
 		default:
 			return false;
@@ -986,7 +1027,7 @@ static void PlacePixel(uint16_t ***array, int x, int y, short color){
 	(*array)[x][y] = color;
 }
 
-static void PlacePacMan(uint16_t ***array, uint16_t **gameboard, uint16_t ** pacman, Coordinates old, Coordinates new){
+static void PlacePacMan(uint16_t ***array, uint16_t **gameboard, uint16_t **pacman, Coordinates old, Coordinates new){
 	int x,y;
 	
 	for(x = old.x-9; x < old.x+10; x++)
@@ -995,7 +1036,7 @@ static void PlacePacMan(uint16_t ***array, uint16_t **gameboard, uint16_t ** pac
 
 	for(x = new.x-9; x < new.x+10; x++)
 		for(y = new.y-9; y < new.y+10; y++)
-			PlacePixel(array, x, y, pacman[x - new.x+9][y - new.y+9]);
+			PlacePixel(array, x, y, pacman[x - new.x+9][y - new.y+9]);	
 }
 
 
@@ -1018,15 +1059,15 @@ static void PlaceSpriteWithTransparency(uint16_t **Combined, uint16_t **GameBoar
 				uint32_t tmpY = spriteCoord.y - 9 + y;
 
 				if(Combined[tmpX][tmpY] == WHITE)
-					PlacePixel(Sprite, x, y, Combined[tmpX][tmpY]);
+					PlacePixel(Sprite, x, y, WHITE);
 				else
-					PlacePixel(Sprite, x, y, GameBoard[tmpX][tmpY]);		
-			}		
+					PlacePixel(Sprite, x, y, GameBoard[tmpX][tmpY]);
+			}
 }
 
 static void IncrementScore()
 {
 	Score += 50;
-	printf("%d\n",Score); 
+	//printf("%d\n",Score); 
 }
 #pragma endregion

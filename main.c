@@ -12,9 +12,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 #include <math.h>
+#include "socal/socal.h"
+#include "socal/hps.h"
+#include "socal/alt_gpio.h"
 
 #include <linux/i2c-dev.h>
 #include "hwlib.h"
+#include "hps_0.h"
 #include "ADXL345.h"
 #include "VGA.h"
 #include "PacMan.h"
@@ -31,6 +35,14 @@
 bool ADXL345_REG_WRITE(int file, uint8_t address, uint8_t value);
 bool ADXL345_REG_READ(int file, uint8_t address,uint8_t *value);
 bool ADXL345_REG_MULTI_READ(int file, uint8_t readaddr,uint8_t readdata[], uint8_t len);
+
+#define AssignPIO(x) virtual_base + ((unsigned long)(ALT_LWFPGASLVS_OFST + x) & (unsigned long)(HW_REGS_MASK))
+
+#define PacMan_Score (*(volatile uint32_t*) PacMan_Addr)
+#define Buttons		 (*(volatile uint32_t*) Button_Addr)
+
+void *PacMan_Addr, *Button_Addr;
+
 
 typedef struct {
 	int X;
@@ -64,6 +76,9 @@ int main(int argc,char ** argv) {
 		close( fd );
 		return( 1 );
 	}
+
+	PacMan_Addr = AssignPIO(PACMAN_PIO_BASE);
+	Button_Addr = AssignPIO(BUTTON_PIO_BASE);
 	
     // Set framebuffer addr to beginning of the SRAM
     PHYSMEM_32(0xff203024) = 0xc8000000;  	// Pixel BackBuffer register
@@ -143,10 +158,13 @@ int main(int argc,char ** argv) {
 				//					    currDirection == LEFT  ? "Left"  :
 				//						currDirection == DOWN  ? "DOWN"  :
 				//						"UP"   );
-				if(!isGameOver())
-				{
+
+				PacMan_Score = 12345;
+				if(isGameOver())
+					break;
+				else
 					MovePacman(currDirection, virtual_base);
-				}
+				
 
 				
 
