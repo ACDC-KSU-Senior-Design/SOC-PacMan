@@ -357,20 +357,18 @@ output					HPS_USB_STP;
 //  REG/WIRE declarations
 //=======================================================
 
-wire			[15: 0]	hex3_hex0;
-//wire			[15: 0]	hex5_hex4;
+wire [15:0] PacMan_Score;
+wire [19:0] DecodedScore;
 
-//assign HEX0 = ~hex3_hex0[ 6: 0]; // hex3_hex0[ 6: 0]; 
-//assign HEX1 = ~hex3_hex0[14: 8];
-//assign HEX2 = ~hex3_hex0[22:16];
-//assign HEX3 = ~hex3_hex0[30:24];
-assign HEX4 = 7'b1111111;
-assign HEX5 = 7'b1111111;
+bin2bcd Decoder(.bin(PacMan_Score), .bcd(DecodedScore));
 
-HexDigit Digit0(HEX0, hex3_hex0[3:0]);
-HexDigit Digit1(HEX1, hex3_hex0[7:4]);
-HexDigit Digit2(HEX2, hex3_hex0[11:8]);
-HexDigit Digit3(HEX3, hex3_hex0[15:12]);
+sevseg_dec Digit0(DecodedScore[3:0]	 , HEX0);
+sevseg_dec Digit1(DecodedScore[7:4]	 , HEX1);
+sevseg_dec Digit2(DecodedScore[11:8] , HEX2);
+sevseg_dec Digit3(DecodedScore[15:12], HEX3);
+sevseg_dec Digit4(DecodedScore[19:16], HEX4);
+
+wire [3:0] Buttons;
 
 //=======================================================
 //  Structural coding
@@ -573,9 +571,11 @@ Computer_System The_System (
 	.hps_io_hps_io_usb1_inst_DIR		(HPS_USB_DIR),
 	.hps_io_hps_io_usb1_inst_NXT		(HPS_USB_NXT),
 	.ctrl_export                     (audio_ctrl),
-    .space_export                    (audio_space),
-    .dac_left_dat_export             (dacl_fifo_indat),
-    .adc_left_dat_export  			(adcl_fifo_outdat)
+   .space_export                    (audio_space),
+   .dac_left_dat_export             (dacl_fifo_indat),
+   .adc_left_dat_export  			(adcl_fifo_outdat),
+   .button_pio_external_connection_export (PacMan_Score), 	// button_pio_external_connection.export
+   .pacman_pio_external_connection_export (Buttons), 			// pacman_pio_external_connection.export
 );
 
 wire [7:0] audio_ctrl;
